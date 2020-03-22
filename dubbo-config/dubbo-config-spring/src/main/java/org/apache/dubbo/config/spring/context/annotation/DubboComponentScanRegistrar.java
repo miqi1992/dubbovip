@@ -51,13 +51,16 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  */
 public class DubboComponentScanRegistrar implements ImportBeanDefinitionRegistrar {
 
+
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+        System.out.println("执行DubboComponentScanRegistrar");
 
+        // 拿到DubboComponentScan注解所定义的包路径
         Set<String> packagesToScan = getPackagesToScan(importingClassMetadata);
-
+        // 注册ServiceAnnotationBeanPostProcessor
         registerServiceAnnotationBeanPostProcessor(packagesToScan, registry);
-
+        // 注册ReferenceAnnotationBeanPostProcessor
         registerReferenceAnnotationBeanPostProcessor(registry);
 
     }
@@ -70,8 +73,9 @@ public class DubboComponentScanRegistrar implements ImportBeanDefinitionRegistra
      * @since 2.5.8
      */
     private void registerServiceAnnotationBeanPostProcessor(Set<String> packagesToScan, BeanDefinitionRegistry registry) {
-
+        // 生成一个RootBeanDefinition，对应的beanClass为ServiceAnnotationBeanPostProcessor.class
         BeanDefinitionBuilder builder = rootBeanDefinition(ServiceAnnotationBeanPostProcessor.class);
+        // 将包路径作为在构造ServiceAnnotationBeanPostProcessor时调用构造方法时的传入参数
         builder.addConstructorArgValue(packagesToScan);
         builder.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
         AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();

@@ -19,8 +19,10 @@
 package org.apache.dubbo.demo.provider;
 
 import org.apache.dubbo.config.RegistryConfig;
+import org.apache.dubbo.config.spring.context.annotation.DubboComponentScan;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 
+import org.apache.dubbo.config.spring.context.annotation.EnableDubboConfig;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +32,11 @@ public class Application {
     public static void main(String[] args) throws Exception {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ProviderConfiguration.class);
         context.start();
+
+        for (String beanDefinitionName : context.getBeanDefinitionNames()) {
+            System.out.println(beanDefinitionName + ":--" + context.getBean(beanDefinitionName).getClass());
+        }
+
         System.in.read();
     }
 
@@ -37,11 +44,11 @@ public class Application {
     @EnableDubbo(scanBasePackages = "org.apache.dubbo.demo.provider")
     @PropertySource("classpath:/spring/dubbo-provider.properties")
     static class ProviderConfiguration {
-        @Bean
-        public RegistryConfig registryConfig() {
-            RegistryConfig registryConfig = new RegistryConfig();
-            registryConfig.setAddress("zookeeper://127.0.0.1:2181");
-            return registryConfig;
-        }
+//        @Bean
+//        public RegistryConfig registryConfig() {
+//            RegistryConfig registryConfig = new RegistryConfig();
+//            registryConfig.setAddress("zookeeper://127.0.0.1:2181");
+//            return registryConfig;
+//        }
     }
 }

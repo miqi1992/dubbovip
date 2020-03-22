@@ -98,7 +98,7 @@ public class DubboConfigBindingBeanPostProcessor implements BeanPostProcessor, A
         if (this.beanName.equals(beanName) && bean instanceof AbstractConfig) {
 
             AbstractConfig dubboConfig = (AbstractConfig) bean;
-
+            // 绑定前缀和对应的实例对象
             bind(prefix, dubboConfig);
 
             customize(beanName, dubboConfig);

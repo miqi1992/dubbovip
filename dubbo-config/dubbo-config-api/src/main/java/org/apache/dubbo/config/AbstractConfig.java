@@ -587,6 +587,11 @@ public abstract class AbstractConfig implements Serializable {
         this.prefix = prefix;
     }
 
+    // 刷新某个Config
+    // 以ServiceConfig为例，ServiceConfig中包括很多属性，比如timeout
+    // 但是在定义一个Service时，如果在注解上没有配置timeout，那么就会其他地方获取timeout的配置
+    // 比如可以从系统变量->配置中心应用配置->配置中心全局配置->注解或xml中定义->dubbo.properties文件
+    // refresh是刷新，将当前ServiceConfig上的set方法所对应的属性更新为优先级最高的值
     public void refresh() {
         try {
             CompositeConfiguration compositeConfiguration = Environment.getInstance().getConfiguration(getPrefix(), getId());
@@ -600,15 +605,20 @@ public abstract class AbstractConfig implements Serializable {
             }
 
             // loop methods, get override value and set the new value back to method
+            //
             Method[] methods = getClass().getMethods();
             for (Method method : methods) {
+                // 是不是setXX()方法
                 if (MethodUtils.isSetter(method)) {
+                    // 获取xx配置项的value
                     String value = StringUtils.trim(compositeConfiguration.getString(extractPropertyName(getClass(), method)));
                     // isTypeMatch() is called to avoid duplicate and incorrect update, for example, we have two 'setGeneric' methods in ReferenceConfig.
                     if (StringUtils.isNotEmpty(value) && ClassUtils.isTypeMatch(method.getParameterTypes()[0], value)) {
                         method.invoke(this, ClassUtils.convertPrimitive(method.getParameterTypes()[0], value));
                     }
+                  // 是不是setParameters()方法
                 } else if (isParametersSetter(method)) {
+                    // 获取parameter配置项的value
                     String value = StringUtils.trim(compositeConfiguration.getString(extractPropertyName(getClass(), method)));
                     if (StringUtils.isNotEmpty(value)) {
                         Map<String, String> map = invokeGetParameters(getClass(), this);

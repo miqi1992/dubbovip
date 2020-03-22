@@ -274,11 +274,18 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             ConfigManager.getInstance().getConfigCenter().ifPresent(cc -> this.configCenter = cc);
         }
 
+        // 如果配置了ConfigCenter
         if (this.configCenter != null) {
+
+            // ConfigCenterConfig有很多属性，所以需要refresh属性（配置）
             // TODO there may have duplicate refresh
             this.configCenter.refresh();
+
+            // 属性更新后，从远程配置中心获取数据(应用配置，全局配置)
             prepareEnvironment();
         }
+
+        // 从配置中心取到配置数据后，刷新所有的Config
         ConfigManager.getInstance().refreshAll();
     }
 

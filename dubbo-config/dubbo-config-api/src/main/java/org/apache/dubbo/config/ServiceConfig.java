@@ -292,11 +292,24 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     public void checkAndUpdateSubConfigs() {
         // Use default configs defined explicitly on global configs
+        // ServiceConfig中的某些属性如果是空的，那么就从ProviderConfig、ModuleConfig、ApplicationConfig中获取
         completeCompoundConfigs();
+
         // Config Center should always being started first.
+        // 从配置中心获取配置，包括应用配置和全局配置
+        // 把获取到的配置放入到Environment中的externalConfigurationMap和appExternalConfigurationMap中
+        // 并刷新所有的Config属性
         startConfigCenter();
+
+        // 调用的createProviderIfAbsent，检查Provider是否存在，如果不存在就取ConfigManager中默认的Provider
+        // ConfigManager中包含了所有了的Config
         checkDefault();
+
+        // 如果没有单独的配置protocols，那么就从provider获取配置的协议，添加到的ServiceConfig中去
+        // 假如程序员在配置文件中配了一个dubbo协议，配置中心的全局配置或应用配置中也配置了一个协议，那么就会被添加到ServiceConfig中
         checkProtocol();
+
+
         checkApplication();
         // if protocol is not injvm checkRegistry
         if (!isOnlyInJvm()) {
@@ -807,6 +820,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     private void completeCompoundConfigs() {
+        // 如果配置了provider，那么则从provider中获取信息赋值其他属性，在这些属性为空的情况下
         if (provider != null) {
             if (application == null) {
                 setApplication(provider.getApplication());
@@ -827,6 +841,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 setConfigCenter(provider.getConfigCenter());
             }
         }
+        // 如果配置了module，那么则从module中获取信息赋值其他属性，在这些属性为空的情况下
         if (module != null) {
             if (registries == null) {
                 setRegistries(module.getRegistries());
@@ -835,6 +850,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 setMonitor(module.getMonitor());
             }
         }
+        // 如果配置了application，那么则从application中获取信息赋值其他属性，在这些属性为空的情况下
         if (application != null) {
             if (registries == null) {
                 setRegistries(application.getRegistries());
@@ -874,15 +890,20 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private void convertProtocolIdsToProtocols() {
         if (StringUtils.isEmpty(protocolIds) && CollectionUtils.isEmpty(protocols)) {
             List<String> configedProtocols = new ArrayList<>();
+            // 从配置中心的全局配置获取dubbo.protocols.的配置项值
             configedProtocols.addAll(getSubProperties(Environment.getInstance()
                     .getExternalConfigurationMap(), PROTOCOLS_SUFFIX));
+
+            // 从配置中心的应用配置获取dubbo.protocols.的配置项值
             configedProtocols.addAll(getSubProperties(Environment.getInstance()
                     .getAppExternalConfigurationMap(), PROTOCOLS_SUFFIX));
 
+            // 用，号join所有的protocol
             protocolIds = String.join(",", configedProtocols);
         }
 
         if (StringUtils.isEmpty(protocolIds)) {
+            // 如果配置中心没有配置协议，就取默认的协议
             if (CollectionUtils.isEmpty(protocols)) {
                 setProtocols(
                         ConfigManager.getInstance().getDefaultProtocols()
@@ -895,8 +916,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 );
             }
         } else {
+            // 如果配置了
             String[] arr = COMMA_SPLIT_PATTERN.split(protocolIds);
             List<ProtocolConfig> tmpProtocols = CollectionUtils.isNotEmpty(protocols) ? protocols : new ArrayList<>();
+
+            // 把从配置中心配置的协议添加到服务的协议列表中去
             Arrays.stream(arr).forEach(id -> {
                 if (tmpProtocols.stream().noneMatch(prot -> prot.getId().equals(id))) {
                     tmpProtocols.add(ConfigManager.getInstance().getProtocol(id).orElseGet(() -> {

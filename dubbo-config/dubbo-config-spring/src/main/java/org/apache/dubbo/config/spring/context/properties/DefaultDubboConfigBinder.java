@@ -37,6 +37,8 @@ public class DefaultDubboConfigBinder extends AbstractDubboConfigBinder {
         dataBinder.setIgnoreInvalidFields(isIgnoreInvalidFields());
         dataBinder.setIgnoreUnknownFields(isIgnoreUnknownFields());
         // Get properties under specified prefix from PropertySources
+        // getPropertySources()会拿到由@PropertySource注入进来的properties文件中的内容
+        // 同时还包括当前java的所有环境变量，包括手动通过-D添加的配置
         Map<String, Object> properties = getSubProperties(getPropertySources(), prefix);
         // Convert Map to MutablePropertyValues
         MutablePropertyValues propertyValues = new MutablePropertyValues(properties);

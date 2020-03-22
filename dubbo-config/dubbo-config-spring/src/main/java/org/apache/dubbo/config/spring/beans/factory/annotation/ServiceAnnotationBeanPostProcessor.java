@@ -148,8 +148,10 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
         for (String packageToScan : packagesToScan) {
 
             // Registers @Service Bean first
+            // 扫描Dubbo自定义的@Service注解
             scanner.scan(packageToScan);
 
+            // 查找@Service注解对应的BeanDefinition
             // Finds all BeanDefinitionHolders of @Service whether @ComponentScan scans or not.
             Set<BeanDefinitionHolder> beanDefinitionHolders =
                     findServiceBeanDefinitionHolders(scanner, packageToScan, registry, beanNameGenerator);
@@ -260,24 +262,24 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
      */
     private void registerServiceBean(BeanDefinitionHolder beanDefinitionHolder, BeanDefinitionRegistry registry,
                                      DubboClassPathBeanDefinitionScanner scanner) {
-
+        // 具体的服务实现类
         Class<?> beanClass = resolveClass(beanDefinitionHolder);
-
+        // @Service可以对服务进行各种配置
         Annotation service = findServiceAnnotation(beanClass);
 
         /**
          * The {@link AnnotationAttributes} of @Service annotation
          */
         AnnotationAttributes serviceAnnotationAttributes = getAnnotationAttributes(service, false, false);
-
+        // 服务实现类对应的接口
         Class<?> interfaceClass = resolveServiceInterfaceClass(serviceAnnotationAttributes, beanClass);
-
+        // 服务实现类对应的bean的名字，比如：demoServiceImpl
         String annotatedServiceBeanName = beanDefinitionHolder.getBeanName();
 
         AbstractBeanDefinition serviceBeanDefinition =
                 buildServiceBeanDefinition(service, serviceAnnotationAttributes, interfaceClass, annotatedServiceBeanName);
 
-        // ServiceBean Bean name
+        // ServiceBean Bean name   ServiceBean表示服务，我们要使用一个服务应该拿ServiceBean
         String beanName = generateServiceBeanName(serviceAnnotationAttributes, interfaceClass);
 
         if (scanner.checkCandidate(beanName, serviceBeanDefinition)) { // check duplicated candidate bean
@@ -372,7 +374,7 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
                                                               AnnotationAttributes serviceAnnotationAttributes,
                                                               Class<?> interfaceClass,
                                                               String annotatedServiceBeanName) {
-
+        // 生成一个ServiceBean对应的BeanDefinition
         BeanDefinitionBuilder builder = rootBeanDefinition(ServiceBean.class);
 
         AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
@@ -382,9 +384,11 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
         String[] ignoreAttributeNames = of("provider", "monitor", "application", "module", "registry", "protocol",
                 "interface", "interfaceName", "parameters");
 
+        //对ServiceBean的属性进行赋值，value表示值，reference表示应用
         propertyValues.addPropertyValues(new AnnotationPropertyValuesAdapter(serviceAnnotation, environment, ignoreAttributeNames));
 
         // References "ref" property to annotated-@Service Bean
+        // ref属性赋值为另外一个bean, 对应的就是被@Service注解的服务实现类对应的bean
         addPropertyReference(builder, "ref", annotatedServiceBeanName);
         // Set interface
         builder.addPropertyValue("interface", interfaceClass.getName());

@@ -65,6 +65,8 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 
+        System.out.println("执行DubboConfigBindingRegistrar");
+
         AnnotationAttributes attributes = AnnotationAttributes.fromMap(
                 importingClassMetadata.getAnnotationAttributes(EnableDubboConfigBinding.class.getName()));
 
@@ -99,6 +101,8 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
             return;
         }
 
+        // 这里就是multiple为true或false的区别，名字的区别，根据multiple用来判断是否从配置项中获取beanName
+        // 如果multiple为false，则看有没有配置id属性，如果没有配置则自动生成一个beanName.
         Set<String> beanNames = multiple ? resolveMultipleBeanNames(properties) :
                 Collections.singleton(resolveSingleBeanName(properties, configClass, registry));
 
@@ -136,9 +140,9 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
         Class<?> processorClass = DubboConfigBindingBeanPostProcessor.class;
 
         BeanDefinitionBuilder builder = rootBeanDefinition(processorClass);
-
+        // 真实的前缀，比如dubbo.registries.r2
         String actualPrefix = multiple ? normalizePrefix(prefix) + beanName : prefix;
-
+        // 添加两个构造方法参数值，所以会调用DubboConfigBindingBeanPostProcessor的两个参数的构造方法
         builder.addConstructorArgValue(actualPrefix).addConstructorArgValue(beanName);
 
         AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();

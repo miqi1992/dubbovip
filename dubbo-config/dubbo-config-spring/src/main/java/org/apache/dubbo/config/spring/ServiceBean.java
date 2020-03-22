@@ -87,7 +87,12 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+
+        // 如果某一个Service是通过Spring暴露的，
+        // 那么当需要获取该服务时就要从Spring容器中进行获取，
+        // 也就是从applicationContext中获取，所以需要把applicationContext添加到SpringExtensionFactory中去
         SpringExtensionFactory.addApplicationContext(applicationContext);
+        // 一定要有这一步，不然ServiceBean将接收不到ContextRefreshedEvent事件
         supportedApplicationListener = addApplicationListener(applicationContext, this);
     }
 
@@ -107,6 +112,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        // 没有被导出并且没有回收（unexport不知道怎么翻译），才导出服务
         if (!isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
                 logger.info("The service ready on spring started. service: " + getInterface());
@@ -184,6 +190,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+        // registryIds代码能看到，但是没找到在哪里能配置
         if (StringUtils.isEmpty(getRegistryIds())) {
             if (getApplication() != null && StringUtils.isNotEmpty(getApplication().getRegistryIds())) {
                 setRegistryIds(getApplication().getRegistryIds());
@@ -273,6 +280,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+        // protocolIds也没看到在哪里配置
         if (StringUtils.isEmpty(getProtocolIds())) {
             if (getProvider() != null && StringUtils.isNotEmpty(getProvider().getProtocolIds())) {
                 setProtocolIds(getProvider().getProtocolIds());
