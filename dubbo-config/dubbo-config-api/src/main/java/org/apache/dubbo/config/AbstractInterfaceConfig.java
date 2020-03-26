@@ -177,6 +177,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     /**
      * The metrics configuration
+     * 性能监控
      */
     protected MetricsConfig metrics;
     protected MetadataReportConfig metadataReportConfig;
@@ -337,18 +338,29 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         if (CollectionUtils.isNotEmpty(registries)) {
             for (RegistryConfig config : registries) {
                 String address = config.getAddress();
+                // 如果注册中心没有配地址，则地址为0.0.0.0
                 if (StringUtils.isEmpty(address)) {
                     address = ANYHOST_VALUE;
                 }
+                // 如果注册中心的地址不是"N/A"
                 if (!RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
+                    // 把application中的参数放入map中，注意，map中的key是没有prefix的
                     appendParameters(map, application);
+                    // 把config中的参数放入map中，注意，map中的key是没有prefix的
+                    // config是RegistryConfig，表示注册中心
                     appendParameters(map, config);
+                    // 此处path值固定为RegistryService.class.getName()，因为现在是在加载注册中心
                     map.put(PATH_KEY, RegistryService.class.getName());
+                    // 把dubbo的版本信息和pid放入map中
                     appendRuntimeParameters(map);
+
+                    // 如果map中如果没有protocol，那么默认为dubbo
                     if (!map.containsKey(PROTOCOL_KEY)) {
                         map.put(PROTOCOL_KEY, DUBBO_PROTOCOL);
                     }
+
+                    // 构造注册中心url，地址+参数
                     List<URL> urls = UrlUtils.parseURLs(address, map);
 
                     for (URL url : urls) {
@@ -356,6 +368,14 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                                 .addParameter(REGISTRY_KEY, url.getProtocol())
                                 .setProtocol(REGISTRY_PROTOCOL)
                                 .build();
+                        // 到此为止，url的内容大概为：
+                        // registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-annotation-provider&dubbo=2.0.2&pid=269936&registry=zookeeper&timestamp=1584886077813
+                        // 该url表示：使用registry协议调用org.apache.dubbo.registry.RegistryService服务
+                        // 参数为application=dubbo-demo-annotation-provider&dubbo=2.0.2&pid=269936&registry=zookeeper&timestamp=1584886077813
+
+                        // 这里是服务提供者和服务消费者区别的逻辑
+                        // 如果是服务提供者，获取register的值，如果为false，表示该服务不注册到注册中心
+                        // 如果是服务消费者，获取subscribe的值，如果为false，表示该引入的服务不订阅注册中心中的数据
                         if ((provider && url.getParameter(REGISTER_KEY, true))
                                 || (!provider && url.getParameter(SUBSCRIBE_KEY, true))) {
                             registryList.add(url);
@@ -490,11 +510,13 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             return;
         }
 
+        // 看此方法上的注释
         String normalizedMock = MockInvoker.normalizeMock(mock);
         if (normalizedMock.startsWith(RETURN_PREFIX)) {
             normalizedMock = normalizedMock.substring(RETURN_PREFIX.length()).trim();
             try {
                 //Check whether the mock value is legal, if it is illegal, throw exception
+                // 解析mock值，如果解析错误则抛异常
                 MockInvoker.parseMockValue(normalizedMock);
             } catch (Exception e) {
                 throw new IllegalStateException("Illegal mock return in <dubbo:service/reference ... " +
@@ -544,6 +566,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
         try {
             //Check if the localClass a constructor with parameter who's type is interfaceClass
+            //检查localClass中是否存在interfaceClass类型的参数
             ReflectUtils.findConstructor(localClass, interfaceClass);
         } catch (NoSuchMethodException e) {
             throw new IllegalStateException("No such constructor \"public " + localClass.getSimpleName() +

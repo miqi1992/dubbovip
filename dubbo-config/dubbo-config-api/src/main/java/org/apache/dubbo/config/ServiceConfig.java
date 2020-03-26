@@ -290,6 +290,19 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return unexported;
     }
 
+    /**
+     * 1. ServiceConfig中的某些属性如果是空的，那么就从ProviderConfig、ModuleConfig、ApplicationConfig中获取
+     * 2. 从配置中心获取配置，包括应用配置和全局配置
+     * 3. 从配置中心获取Provider配置
+     * 4. 从配置中心获取Protocol配置
+     * 5. 如果ApplicationConfig为空，则构造一个ApplicationConfig
+     * 6. 从配置中心获取Registry配置
+     * 7. 更新ServiceConfig中的属性为优先级最高的配置
+     * 8. 更新MetadataReportConfig中的属性为优先级最高的配置
+     * 9. 检查当前服务是不是一个泛化服务
+     * 10.检查Stub和Local
+     * 11.检查Mock
+     */
     public void checkAndUpdateSubConfigs() {
         // Use default configs defined explicitly on global configs
         // ServiceConfig中的某些属性如果是空的，那么就从ProviderConfig、ModuleConfig、ApplicationConfig中获取
@@ -311,37 +324,52 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
 
         checkApplication();
+
+
         // if protocol is not injvm checkRegistry
+        // 如果protocol不是只有injvm协议，表示服务调用不是只在本机jvm里面调用，那就需要用到注册中心
+        // 如果protocol是injvm，表示本地调用
         if (!isOnlyInJvm()) {
             checkRegistry();
         }
+
+        // 刷新ServiceConfig
         this.refresh();
+
+        // 如果配了metadataReportConfig，那么就刷新配置
         checkMetadataReport();
 
         if (StringUtils.isEmpty(interfaceName)) {
             throw new IllegalStateException("<dubbo:service interface=\"\" /> interface not allow null!");
         }
 
+        // 当前服务对应的实现类是一个GenericService，表示没有特定的接口
         if (ref instanceof GenericService) {
             interfaceClass = GenericService.class;
             if (StringUtils.isEmpty(generic)) {
                 generic = Boolean.TRUE.toString();
             }
         } else {
+            // 加载接口
             try {
                 interfaceClass = Class.forName(interfaceName, true, Thread.currentThread()
                         .getContextClassLoader());
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
+            // 刷新MethodConfig，并判断MethodConfig中对应的方法在接口中是否存在
             checkInterfaceAndMethods(interfaceClass, methods);
+            // 实现类是不是该接口类型
             checkRef();
             generic = Boolean.FALSE.toString();
         }
+        // local和stub一样，不建议使用了
         if (local != null) {
+            // 如果本地存根为true，则存根类为interfaceName + "Local"
             if (Boolean.TRUE.toString().equals(local)) {
                 local = interfaceName + "Local";
             }
+            // 加载本地存根类
             Class<?> localClass;
             try {
                 localClass = ClassUtils.forNameWithThreadContextClassLoader(local);
@@ -352,7 +380,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException("The local implementation class " + localClass.getName() + " not implement interface " + interfaceName);
             }
         }
+        // 本地存根
         if (stub != null) {
+            // 如果本地存根为true，则存根类为interfaceName + "Stub"
             if (Boolean.TRUE.toString().equals(stub)) {
                 stub = interfaceName + "Stub";
             }
@@ -366,7 +396,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException("The stub implementation class " + stubClass.getName() + " not implement interface " + interfaceName);
             }
         }
+        // 检查local和stub
         checkStubAndLocal(interfaceClass);
+        // 检查mock
         checkMock(interfaceClass);
     }
 
@@ -382,13 +414,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     public synchronized void export() {
         checkAndUpdateSubConfigs();
 
+        // 检查服务是否需要导出
         if (!shouldExport()) {
             return;
         }
 
+        // 检查是否需要延迟发布
         if (shouldDelay()) {
             DELAY_EXPORT_EXECUTOR.schedule(this::doExport, getDelay(), TimeUnit.MILLISECONDS);
         } else {
+            // 导出服务
             doExport();
         }
     }
@@ -415,9 +450,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     protected synchronized void doExport() {
+        // 当前服务已经被取消了，就不能再导出了，为什么？
         if (unexported) {
             throw new IllegalStateException("The service " + interfaceClass.getName() + " has already unexported!");
         }
+        // 已经导出了，就不再导出了
         if (exported) {
             return;
         }
@@ -463,37 +500,72 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        // 得到url，注册服务也是一个服务，所以也会有对应的url，通过调用该url完成服务注册
         List<URL> registryURLs = loadRegistries(true);
+
+        // 遍历每个协议
+        // 一个协议一个服务
         for (ProtocolConfig protocolConfig : protocols) {
+            // path表示服务名
+            // contextPath表示应用名（可配置）
+            // pathKey = group/contextpath/path:version
+            // 例子：myGroup/user/org.apache.dubbo.demo.DemoService:1.0.1
+
             String pathKey = URL.buildKey(getContextPath(protocolConfig).map(p -> p + "/" + path).orElse(path), group, version);
+
+            // ProviderModel中存在服务提供者访问路径，实现类，接口，以及接口中的各个方法对应的ProviderMethodModel
+            // ProviderMethodModel表示某一个方法，方法名，所属的服务的，
             ProviderModel providerModel = new ProviderModel(pathKey, ref, interfaceClass);
+
+            // ApplicationModel表示应用中有哪些服务提供者和引用了哪些服务
             ApplicationModel.initProviderModel(pathKey, providerModel);
+
+            // 每种协议导出一个单独的服务,注册到各个注册中心
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }
 
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
+        // protocolConfig表示某个协议，registryURLs表示所有的注册中心
+
+        // 如果配置的某个协议，没有配置name，那么默认为dubbo
         String name = protocolConfig.getName();
         if (StringUtils.isEmpty(name)) {
             name = DUBBO;
         }
 
+        // 这个map表示服务url的参数
         Map<String, String> map = new HashMap<String, String>();
         map.put(SIDE_KEY, PROVIDER_SIDE);
 
         appendRuntimeParameters(map);
+
+        // 监控中心参数
         appendParameters(map, metrics);
+        // 应用相关参数
         appendParameters(map, application);
+        // 模块相关参数
         appendParameters(map, module);
         // remove 'default.' prefix for configs from ProviderConfig
         // appendParameters(map, provider, Constants.DEFAULT_KEY);
+
+        // 提供者相关参数
         appendParameters(map, provider);
+
+        // 协议相关参数
         appendParameters(map, protocolConfig);
+
+        // 服务本身相关参数
         appendParameters(map, this);
+
+        // 服务中某些方法参数
         if (CollectionUtils.isNotEmpty(methods)) {
             for (MethodConfig method : methods) {
+                // 某个方法的配置参数，注意有prefix
                 appendParameters(map, method, method.getName());
                 String retryKey = method.getName() + ".retry";
+
+                // 如果某个方法配置存在xx.retry=false，则改成xx.retry=0
                 if (map.containsKey(retryKey)) {
                     String retryValue = map.remove(retryKey);
                     if (Boolean.FALSE.toString().equals(retryValue)) {
@@ -502,7 +574,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 }
                 List<ArgumentConfig> arguments = method.getArguments();
                 if (CollectionUtils.isNotEmpty(arguments)) {
+                    // 遍历当前方法配置中的参数配置
                     for (ArgumentConfig argument : arguments) {
+
+                        // 如果配置了type，则遍历当前接口的所有方法，然后找到方法名和当前方法名相等的方法，可能存在多个
+                        // 如果配置了index,则看index对应位置的参数类型是否等于type,如果相等，则向map中存入argument对象中的参数
+                        // 如果没有配置index，那么则遍历方法所有的参数类型，等于type则向map中存入argument对象中的参数
+                        // 如果没有配置type,但配置了index,则把对应位置的argument放入map
                         // convert argument type
                         if (argument.getType() != null && argument.getType().length() > 0) {
                             Method[] methods = interfaceClass.getMethods();
@@ -550,11 +628,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             map.put(GENERIC_KEY, generic);
             map.put(METHODS_KEY, ANY_VALUE);
         } else {
+            // 拿服务的版本
             String revision = Version.getVersion(interfaceClass, version);
             if (revision != null && revision.length() > 0) {
                 map.put(REVISION_KEY, revision);
             }
 
+            // 通过接口对应的Wrapper，拿到接口中所有的方法名字
             String[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();
             if (methods.length == 0) {
                 logger.warn("No method found in service interface " + interfaceClass.getName());
@@ -563,6 +643,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 map.put(METHODS_KEY, StringUtils.join(new HashSet<String>(Arrays.asList(methods)), ","));
             }
         }
+
+        // Token是为了防止服务被消费者直接调用（伪造http请求）
         if (!ConfigUtils.isEmpty(token)) {
             if (ConfigUtils.isDefault(token)) {
                 map.put(TOKEN_KEY, UUID.randomUUID().toString());
@@ -570,11 +652,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 map.put(TOKEN_KEY, token);
             }
         }
+
         // export service
+        // 通过该host和port访问该服务
         String host = this.findConfigedHosts(protocolConfig, registryURLs, map);
         Integer port = this.findConfigedPorts(protocolConfig, name, map);
+        // 服务url
         URL url = new URL(name, host, port, getContextPath(protocolConfig).map(p -> p + "/" + path).orElse(path), map);
+        // url：http://192.168.40.17:80/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-annotation-provider&bean.name=ServiceBean:org.apache.dubbo.demo.DemoService&bind.ip=192.168.40.17&bind.port=80&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello&pid=285072&release=&side=provider&timestamp=1585206500409
 
+        // 可以通过ConfiguratorFactory，在服务导出时候进行统一配置
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                 .hasExtension(url.getProtocol())) {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -677,6 +764,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * Register & bind IP address for service provider, can be configured separately.
      * Configuration priority: environment variables -> java system properties -> host property in config file ->
      * /etc/hosts -> default network address -> first available network address
+     * 为服务提供者绑定ip地址，比如启动Tomcat时可以绑定到特定的ip
      *
      * @param protocolConfig
      * @param registryURLs
@@ -686,6 +774,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private String findConfigedHosts(ProtocolConfig protocolConfig, List<URL> registryURLs, Map<String, String> map) {
         boolean anyhost = false;
 
+        // 从系统环境变量中获取指定的ip进行绑定
         String hostToBind = getValueFromConfig(protocolConfig, DUBBO_IP_TO_BIND);
         if (hostToBind != null && hostToBind.length() > 0 && isInvalidLocalHost(hostToBind)) {
             throw new IllegalArgumentException("Specified invalid bind ip from property:" + DUBBO_IP_TO_BIND + ", value:" + hostToBind);
@@ -693,26 +782,33 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
         // if bind ip is not found in environment, keep looking up
         if (StringUtils.isEmpty(hostToBind)) {
+            // 获取protocolConfig中指定的host
             hostToBind = protocolConfig.getHost();
             if (provider != null && StringUtils.isEmpty(hostToBind)) {
                 hostToBind = provider.getHost();
             }
+            // 如果是无效的ip，localhost, 0.0.0.0都属于无效，localhost表示只有本机能访问，0.0.0.0表示任何主机都能访问
             if (isInvalidLocalHost(hostToBind)) {
                 anyhost = true;
                 try {
                     logger.info( "No valid ip found from environment, try to find valid host from DNS.");
+                    // 拿到本机网卡中ip地址
                     hostToBind = InetAddress.getLocalHost().getHostAddress();
                 } catch (UnknownHostException e) {
                     logger.warn(e.getMessage(), e);
                 }
+
+                // 如果还是不合法的
                 if (isInvalidLocalHost(hostToBind)) {
                     if (CollectionUtils.isNotEmpty(registryURLs)) {
                         for (URL registryURL : registryURLs) {
+                            // 如果注册中心是MULTICAST，
                             if (MULTICAST.equalsIgnoreCase(registryURL.getParameter("registry"))) {
                                 // skip multicast registry since we cannot connect to it via Socket
                                 continue;
                             }
                             try (Socket socket = new Socket()) {
+                                // 通过一个socket去连注册中心，为什么要这么做？
                                 SocketAddress addr = new InetSocketAddress(registryURL.getHost(), registryURL.getPort());
                                 socket.connect(addr, 1000);
                                 hostToBind = socket.getLocalAddress().getHostAddress();
@@ -722,6 +818,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                             }
                         }
                     }
+                    // 如果还不合法，那就去127.0.0.1
                     if (isInvalidLocalHost(hostToBind)) {
                         hostToBind = getLocalHost();
                     }

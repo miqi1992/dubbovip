@@ -145,6 +145,7 @@ final public class MockInvoker<T> implements Invoker<T> {
             Throwable t;
             Class<?> bizException = ReflectUtils.forName(throwstr);
             Constructor<?> constructor;
+            // 找到对应异常类的的构造方法，条件是构造方法只有一个String类型参数
             constructor = ReflectUtils.findConstructor(bizException, String.class);
             t = (Throwable) constructor.newInstance(new Object[]{"mocked exception for service degradation."});
             if (THROWABLE_MAP.size() < 1000) {
@@ -219,6 +220,7 @@ final public class MockInvoker<T> implements Invoker<T> {
             return mock;
         }
 
+        // 如果配置的是“return”，则改成“return null”
         if (RETURN_KEY.equalsIgnoreCase(mock)) {
             return RETURN_PREFIX + "null";
         }
@@ -227,9 +229,11 @@ final public class MockInvoker<T> implements Invoker<T> {
             return "default";
         }
 
+        // 如果配置的是以“fail: return 123”开头，则mock的“return 123”
         if (mock.startsWith(FAIL_PREFIX)) {
             mock = mock.substring(FAIL_PREFIX.length()).trim();
         }
+
 
         if (mock.startsWith(FORCE_PREFIX)) {
             mock = mock.substring(FORCE_PREFIX.length()).trim();

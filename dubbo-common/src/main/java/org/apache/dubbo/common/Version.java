@@ -155,6 +155,7 @@ public final class Version {
         return "";
     }
 
+    // 这个方法在服务导出和服务引入时都会用到
     public static String getVersion(Class<?> cls, String defaultVersion) {
         try {
             // find version info from MANIFEST.MF first

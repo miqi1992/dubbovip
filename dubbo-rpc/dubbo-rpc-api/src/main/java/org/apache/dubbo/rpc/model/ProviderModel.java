@@ -81,14 +81,18 @@ public class ProviderModel {
         Method[] methodsToExport = null;
         methodsToExport = this.serviceInterfaceClass.getMethods();
 
+        // 遍历接口所有的方法
         for (Method method : methodsToExport) {
             method.setAccessible(true);
 
+            // methods表示的是某个方法对应的ProviderMethodModel
+            // methods为什么是一个list？应为method.getName返回的仅仅只有方法名，不包括方法参数列表，有可能存在重载
             List<ProviderMethodModel> methodModels = methods.get(method.getName());
             if (methodModels == null) {
                 methodModels = new ArrayList<ProviderMethodModel>(1);
                 methods.put(method.getName(), methodModels);
             }
+
             methodModels.add(new ProviderMethodModel(method, serviceName));
         }
     }

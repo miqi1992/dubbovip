@@ -161,43 +161,76 @@ public abstract class AbstractConfig implements Serializable {
         }
         Method[] methods = config.getClass().getMethods();
         for (Method method : methods) {
+            // 遍历某个Config类的get方法和getParameters方法
             try {
                 String name = method.getName();
                 if (MethodUtils.isGetter(method)) {
+                    // 利用get方法来获得key和value，key表示配置项，value表示对应的值
+                    // 如果@Parameter注解的key属性有值，则该值为key，否则截取get方法获取到key
+                    // 执行get方法获取到value
+                    // 对于某些key可以存在多个值，那么这是可以利用@Parameter注解的append属性
+                    // 如果prefix存在，则key=prefix+"."+key
+                    // 把key和value，put到parameters中
+
                     Parameter parameter = method.getAnnotation(Parameter.class);
+
+                    // 如果get方法返回类型是Object类型，或者
+                    // @Parameter注解存在，但是excluded为true，表示忽略该get方法
+                    // 有些参数不需要做为url的参数，比如contextPath
                     if (method.getReturnType() == Object.class || parameter != null && parameter.excluded()) {
                         continue;
                     }
+
+                    // get方法对应的key
                     String key;
                     if (parameter != null && parameter.key().length() > 0) {
                         key = parameter.key();
                     } else {
                         key = calculatePropertyFromGetter(name);
                     }
+
+                    // 执行get方法
                     Object value = method.invoke(config);
                     String str = String.valueOf(value).trim();
+
+
                     if (value != null && str.length() > 0) {
+                        // 需要编码
                         if (parameter != null && parameter.escaped()) {
                             str = URL.encode(str);
                         }
+
+                        // 是不是把get方法的返回值添加到现有的parameters中去
                         if (parameter != null && parameter.append()) {
+
+                            // 从parameters获取key默认的值
                             String pre = parameters.get(DEFAULT_KEY + "." + key);
                             if (pre != null && pre.length() > 0) {
                                 str = pre + "," + str;
                             }
+
+                            // 从parameters获取key对应的值
                             pre = parameters.get(key);
                             if (pre != null && pre.length() > 0) {
                                 str = pre + "," + str;
                             }
                         }
+                        // 前缀+key
+                        // 为什么要有前缀？因为在服务导出时，会存在很多的配置项与值，这些配置项都会存入到map中，防止key冲突
+                        // 比如可以针对对个方法进行配置，此时前缀就是方法名
                         if (prefix != null && prefix.length() > 0) {
                             key = prefix + "." + key;
                         }
+
+                        // key对应某个值
                         parameters.put(key, str);
                     } else if (parameter != null && parameter.required()) {
                         throw new IllegalStateException(config.getClass().getSimpleName() + "." + key + " == null");
                     }
                 } else if (isParametersGetter(method)) {
+                    // getParameters方法
+
+                    // 执行getParameters方法
                     Map<String, String> map = (Map<String, String>) method.invoke(config, new Object[0]);
                     parameters.putAll(convert(map, prefix));
                 }
@@ -464,6 +497,9 @@ public abstract class AbstractConfig implements Serializable {
 
         Map<String, String> result = new HashMap<>();
         String pre = (prefix != null && prefix.length() > 0 ? prefix + "." : "");
+
+        // 如果有前缀就拼上前缀
+        // 为什么要有前缀？因为在服务导出时，会存在很多的配置项与值，这些配置项都会存入到map中，防止key冲突
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             result.put(pre + entry.getKey().replace('-', '.'), entry.getValue());
         }

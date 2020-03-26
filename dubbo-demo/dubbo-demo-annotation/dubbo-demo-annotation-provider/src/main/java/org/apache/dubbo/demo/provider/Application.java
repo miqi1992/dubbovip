@@ -34,7 +34,7 @@ public class Application {
         context.start();
 
         for (String beanDefinitionName : context.getBeanDefinitionNames()) {
-            System.out.println(beanDefinitionName + ":--" + context.getBean(beanDefinitionName).getClass());
+            System.out.println(beanDefinitionName);
         }
 
         System.in.read();
