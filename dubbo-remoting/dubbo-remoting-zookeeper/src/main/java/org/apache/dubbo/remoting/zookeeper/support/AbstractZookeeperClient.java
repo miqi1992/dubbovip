@@ -109,11 +109,14 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
             childListeners.putIfAbsent(path, new ConcurrentHashMap<ChildListener, TargetChildListener>());
             listeners = childListeners.get(path);
         }
+
+
         TargetChildListener targetListener = listeners.get(listener);
         if (targetListener == null) {
             listeners.putIfAbsent(listener, createTargetChildListener(path, listener));
             targetListener = listeners.get(listener);
         }
+        // 真正的利用curator注册watch, targetListener就是watch
         return addTargetChildListener(path, targetListener);
     }
 

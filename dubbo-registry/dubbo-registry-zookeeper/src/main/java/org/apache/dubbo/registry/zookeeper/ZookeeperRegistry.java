@@ -167,18 +167,26 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 // 单独订阅某一个服务
 
                 List<URL> urls = new ArrayList<>();
+                // 得到真正要监听的zk上的路径
                 for (String path : toCategoriesPath(url)) {
+                    // 根据监听地址去拿listeners，如果没有则生成
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                     if (listeners == null) {
                         zkListeners.putIfAbsent(url, new ConcurrentHashMap<>());
                         listeners = zkListeners.get(url);
                     }
+
+                    // 一个NotifyListener对应一个ChildListener
                     ChildListener zkListener = listeners.get(listener);
                     if (zkListener == null) {
+                        // lambda表达式就是监听逻辑， parentPath表示父path,currentChilds表示当前拥有的child, 会调用notify方法进行实际的处理
                         listeners.putIfAbsent(listener, (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds)));
                         zkListener = listeners.get(listener);
                     }
+                    // 创建zk上路径
                     zkClient.create(path, false);
+
+                    // 添加真正跟zk相关的ChildListener,ChildListener中的逻辑就是监听到zk上数据发生了变化后会触发的逻辑
                     List<String> children = zkClient.addChildListener(path, zkListener);
                     if (children != null) {
                         urls.addAll(toUrlsWithEmpty(url, path, children));
