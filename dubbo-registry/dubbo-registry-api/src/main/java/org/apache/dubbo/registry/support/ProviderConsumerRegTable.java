@@ -36,9 +36,19 @@ public class ProviderConsumerRegTable {
     public static ConcurrentHashMap<String, ConcurrentMap<Invoker, ProviderInvokerWrapper>> providerInvokers = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>> consumerInvokers = new ConcurrentHashMap<>();
 
+    /**
+     *
+     * @param invoker  表示服务执行器
+     * @param registryUrl 表示注册中心地址, zookeeper://127.0.0.1/...
+     * @param providerUrl 表示服务提供者地址, dubbo://192.168.40.17:20880/...
+     * @param <T>
+     * @return
+     */
     public static <T> ProviderInvokerWrapper<T> registerProvider(Invoker<T> invoker, URL registryUrl, URL providerUrl) {
         ProviderInvokerWrapper<T> wrapperInvoker = new ProviderInvokerWrapper<>(invoker, registryUrl, providerUrl);
         String serviceUniqueName = providerUrl.getServiceKey();
+
+        // 根据
         ConcurrentMap<Invoker, ProviderInvokerWrapper> invokers = providerInvokers.get(serviceUniqueName);
         if (invokers == null) {
             providerInvokers.putIfAbsent(serviceUniqueName, new ConcurrentHashMap<>());

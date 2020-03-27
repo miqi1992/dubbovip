@@ -41,6 +41,8 @@ public final class FailedSubscribedTask extends AbstractRetryTask {
 
     @Override
     protected void doRetry(URL url, FailbackRegistry registry, Timeout timeout) {
+        // 定时重试，如果成功，则把listener从failedSubscribed中移除
+        // 没有成功也没关系，父类的AbstractRetryTask中会捕获异常，等待下一次定时执行
         registry.doSubscribe(url, listener);
         registry.removeFailedSubscribedTask(url, listener);
     }

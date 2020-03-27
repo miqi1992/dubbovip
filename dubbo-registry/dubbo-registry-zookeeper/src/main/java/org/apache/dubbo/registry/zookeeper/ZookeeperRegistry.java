@@ -125,10 +125,14 @@ public class ZookeeperRegistry extends FailbackRegistry {
         }
     }
 
+
+    // 进行订阅，先看父类的subscribe方法
     @Override
     public void doSubscribe(final URL url, final NotifyListener listener) {
         try {
             if (ANY_VALUE.equals(url.getServiceInterface())) {
+                // 订阅所有服务
+
                 String root = toRootPath();
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                 if (listeners == null) {
@@ -160,6 +164,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     }
                 }
             } else {
+                // 单独订阅某一个服务
+
                 List<URL> urls = new ArrayList<>();
                 for (String path : toCategoriesPath(url)) {
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
@@ -248,6 +254,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
         } else {
             categories = url.getParameter(CATEGORY_KEY, new String[]{DEFAULT_CATEGORY});
         }
+
+        // 根据不同的categories生成zk上对应的路径，比如：
+        // url的category参数的值如果是configurators， 那表示要监听/dubbo/org.apache.dubbo.demo.DemoService/configurators路径
+
         String[] paths = new String[categories.length];
         for (int i = 0; i < categories.length; i++) {
             paths[i] = toServicePath(url) + PATH_SEPARATOR + categories[i];

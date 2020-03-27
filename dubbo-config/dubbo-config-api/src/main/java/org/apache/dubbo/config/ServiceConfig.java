@@ -668,27 +668,42 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                     .getExtension(url.getProtocol()).getConfigurator(url).configure(url);
         }
 
-        String scope = url.getParameter(SCOPE_KEY);
+        String scope = url.getParameter(SCOPE_KEY); // scope可能为null，remote, local,none
         // don't export when none is configured
         if (!SCOPE_NONE.equalsIgnoreCase(scope)) {
+            // 如果scope为none,则不会进行任何的服务导出，既不会远程，也不会本地
 
             // export to local if the config is not remote (export to remote only when config is remote)
             if (!SCOPE_REMOTE.equalsIgnoreCase(scope)) {
+                // 如果scope不是remote,则会进行本地导出，会把当前url的protocol改为injvm，然后进行导出
                 exportLocal(url);
             }
             // export to remote if the config is not local (export to local only when config is local)
             if (!SCOPE_LOCAL.equalsIgnoreCase(scope)) {
+                // 如果scope不是local,则会进行远程导出
+
                 if (CollectionUtils.isNotEmpty(registryURLs)) {
+                    // 如果有注册中心，则将服务注册到注册中心
                     for (URL registryURL : registryURLs) {
+
                         //if protocol is only injvm ,not register
+                        // 如果是injvm，则不需要进行注册中心注册
                         if (LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
                             continue;
                         }
+
+                        // 该服务是否是动态，对应zookeeper就是是否是临时节点，对应dubbo中的功能就是静态服务
                         url = url.addParameterIfAbsent(DYNAMIC_KEY, registryURL.getParameter(DYNAMIC_KEY));
+
+                        // 基于注册中心地址的到监控中心地址，为什么是基于注册中心地址？
                         URL monitorUrl = loadMonitor(registryURL);
+
+                        // 把监控中心地址添加到服务url中
                         if (monitorUrl != null) {
                             url = url.addParameterAndEncoded(MONITOR_KEY, monitorUrl.toFullString());
                         }
+
+                        // 服务的register参数，如果为true，则表示要注册到注册中心
                         if (logger.isInfoEnabled()) {
                             if (url.getParameter(REGISTER_KEY, true)) {
                                 logger.info("Register dubbo service " + interfaceClass.getName() + " url " + url + " to registry " + registryURL);
@@ -698,31 +713,47 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         }
 
                         // For providers, this is used to enable custom proxy to generate invoker
+                        //
                         String proxy = url.getParameter(PROXY_KEY);
                         if (StringUtils.isNotEmpty(proxy)) {
                             registryURL = registryURL.addParameter(PROXY_KEY, proxy);
                         }
 
+                        // 使用代理生成一个Invoker，Invoker表示服务提供者的代理，可以使用Invoker的invoke方法执行服务
+                        // 当实际情况是，当前Invoker表示的是服务注册的Invoker，对应的url为 registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-annotation-provider&dubbo=2.0.2&export=http%3A%2F%2F192.168.40.17%3A80%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-annotation-provider%26bean.name%3DServiceBean%3Aorg.apache.dubbo.demo.DemoService%26bind.ip%3D192.168.40.17%26bind.port%3D80%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D19472%26release%3D%26side%3Dprovider%26timestamp%3D1585207994860&pid=19472&registry=zookeeper&timestamp=1585207994828
                         Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
+
+                        // DelegateProviderMetaDataInvoker也表示服务提供者，包括了Invoker和服务的配置
+                        // DelegateProviderMetaDataInvoker可以理解为一个完整的服务提供者
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
+                        // 使用特定的协议进行导出，这里的协议为RegistryProtocol，导出成功后得到一个Exporter
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
                 } else {
+                    // 没有配置注册中心时，也会导出服务
+
                     if (logger.isInfoEnabled()) {
                         logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
                     }
+
+                    // 下面的代码和存在注册中心时一样，代码虽然一样，但是生成invoker的url是不一样的
+                    // 当存在注册中心时，是先使用Registy协议注册服务，然后在使用Http协议导出服务
+                    // 而没有注册中心时，是直接使用Http协议导出服务
                     Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, url);
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
                     Exporter<?> exporter = protocol.export(wrapperInvoker);
                     exporters.add(exporter);
                 }
+
+
                 /**
                  * @since 2.7.0
                  * ServiceData Store
                  */
+                // 根据服务url，讲服务的元信息存入元数据中心
                 MetadataReportService metadataReportService = null;
                 if ((metadataReportService = getMetadataReportService()) != null) {
                     metadataReportService.publishProvider(url);

@@ -100,7 +100,10 @@ public class MetadataReportService {
             if (StringUtils.isNotEmpty(interfaceName)) {
                 ClassLoader classLoader = null == Thread.currentThread().getContextClassLoader() ? this.getClass().getClassLoader() : Thread.currentThread().getContextClassLoader();
                 Class interfaceClass = Class.forName(interfaceName, true, classLoader);
+
+                // 这个就是服务的元信息，包括接口名和服务的配置
                 FullServiceDefinition fullServiceDefinition = ServiceDefinitionBuilder.buildFullDefinition(interfaceClass, providerUrl.getParameters());
+
                 metadataReport.storeProviderMetadata(new MetadataIdentifier(providerUrl.getServiceInterface(),
                         providerUrl.getParameter(VERSION_KEY), providerUrl.getParameter(GROUP_KEY),
                         PROVIDER_SIDE, providerUrl.getParameter(APPLICATION_KEY)), fullServiceDefinition);

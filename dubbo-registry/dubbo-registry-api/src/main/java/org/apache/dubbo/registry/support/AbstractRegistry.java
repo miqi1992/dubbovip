@@ -294,6 +294,7 @@ public abstract class AbstractRegistry implements Registry {
         registered.remove(url);
     }
 
+    // 把listener添加到subscribed中，subscribed是一个map, 存的是URL:Set<NotifyListener>
     @Override
     public void subscribe(URL url, NotifyListener listener) {
         if (url == null) {

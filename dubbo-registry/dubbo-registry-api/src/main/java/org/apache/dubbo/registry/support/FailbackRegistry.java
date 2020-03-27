@@ -144,6 +144,8 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         if (oldOne != null) {
             return;
         }
+
+        // 开启一个Task进行重试
         FailedSubscribedTask newTask = new FailedSubscribedTask(url, this, listener);
         oldOne = failedSubscribed.putIfAbsent(h, newTask);
         if (oldOne == null) {
@@ -286,6 +288,11 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     *
+     * @param url 表示要订阅的url，比如provider://...
+     * @param listener
+     */
     @Override
     public void subscribe(URL url, NotifyListener listener) {
         super.subscribe(url, listener);
@@ -316,6 +323,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             }
 
             // Record a failed registration request to a failed list, retry regularly
+            // 添加listener，向zk添加监听器时如果报错了，那么会把这个listener添加到failedSubscribed中，并会定时重试（重新注册listener）
             addFailedSubscribed(url, listener);
         }
     }

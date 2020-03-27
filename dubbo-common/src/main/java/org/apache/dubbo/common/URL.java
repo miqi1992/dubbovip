@@ -292,9 +292,21 @@ class URL implements Serializable {
         return result.clearParameters().addParameters(newMap);
     }
 
+
+    /**
+     *
+     * @param url
+     * @param reserveParams 保留哪些key
+     * @param reserveParamPrefixs 保留指定的前缀key
+     * @return
+     */
     public static URL valueOf(URL url, String[] reserveParams, String[] reserveParamPrefixs) {
         Map<String, String> newMap = new HashMap<>();
+
+        // url上本来存在的参数
         Map<String, String> oldMap = url.getParameters();
+
+        // 先按前缀进行保留，并且会过滤掉value为null的
         if (reserveParamPrefixs != null && reserveParamPrefixs.length != 0) {
             for (Map.Entry<String, String> entry : oldMap.entrySet()) {
                 for (String reserveParamPrefix : reserveParamPrefixs) {
@@ -305,6 +317,7 @@ class URL implements Serializable {
             }
         }
 
+        // 保留知道的参数，并且value不能为空
         if (reserveParams != null) {
             for (String reserveParam : reserveParams) {
                 String tmp = oldMap.get(reserveParam);
