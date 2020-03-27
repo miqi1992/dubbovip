@@ -257,6 +257,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
         // 根据不同的categories生成zk上对应的路径，比如：
         // url的category参数的值如果是configurators， 那表示要监听/dubbo/org.apache.dubbo.demo.DemoService/configurators路径
+        // url的category参数的值如果是providers， 那表示要监听/dubbo/org.apache.dubbo.demo.DemoService/providers路径
+        // url的category参数的值如果是consumers， 那表示要监听/dubbo/org.apache.dubbo.demo.DemoService/consumers路径
+        // url的category参数的值如果是routers， 那表示要监听/dubbo/org.apache.dubbo.demo.DemoService/routers路径
+
 
         String[] paths = new String[categories.length];
         for (int i = 0; i < categories.length; i++) {
