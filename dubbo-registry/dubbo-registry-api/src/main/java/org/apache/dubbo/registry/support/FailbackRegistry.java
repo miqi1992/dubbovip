@@ -356,6 +356,12 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     *
+     * @param url      被监听的url
+     * @param listener 监听器
+     * @param urls
+     */
     @Override
     protected void notify(URL url, NotifyListener listener, List<URL> urls) {
         if (url == null) {
