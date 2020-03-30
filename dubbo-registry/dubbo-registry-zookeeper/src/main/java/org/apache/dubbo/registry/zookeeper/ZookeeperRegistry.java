@@ -285,11 +285,13 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return toCategoryPath(url) + PATH_SEPARATOR + URL.encode(url.toFullString());
     }
 
+
     private List<URL> toUrlsWithoutEmpty(URL consumer, List<String> providers) {
         List<URL> urls = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(providers)) {
             for (String provider : providers) {
                 provider = URL.decode(provider);
+                // provider是一个url
                 if (provider.contains(PROTOCOL_SEPARATOR)) {
                     URL url = URL.valueOf(provider);
                     if (UrlUtils.isMatch(consumer, url)) {
@@ -301,8 +303,18 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return urls;
     }
 
+    /**
+     *
+     * @param consumer 表示监听的url，例如provider://192.168.40.17:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-annotation-provider&bean.name=ServiceBean:org.apache.dubbo.demo.DemoService&bind.ip=192.168.40.17&bind.port=20880&category=configurators&check=false&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello&pid=345180&release=2.7.0&side=provider&timestamp=1585483924659
+     * @param path 表示监听的目录，例如/dubbo/org.apache.dubbo.demo.DemoService/configurators
+     * @param providers 表示发生事件时，path下的子节点
+     * @return
+     */
     private List<URL> toUrlsWithEmpty(URL consumer, String path, List<String> providers) {
+        // consumer表示某个服务url，providers表示该服务下的配置，path表示某个服务的配置数据存储路径
+        // 过滤providers
         List<URL> urls = toUrlsWithoutEmpty(consumer, providers);
+        // 过滤之后为空，则添加一个empty://协议到urls中，并返回
         if (urls == null || urls.isEmpty()) {
             int i = path.lastIndexOf(PATH_SEPARATOR);
             String category = i < 0 ? path : path.substring(i + 1);
@@ -312,6 +324,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     .build();
             urls.add(empty);
         }
+
+        // 所以最后返回的urls，要么只有一个empty://协议，要么就是有几个override://协议
         return urls;
     }
 

@@ -299,11 +299,14 @@ public class DubboProtocol extends AbstractProtocol {
                 }
 
             } else {
+                // 服务的stub方法
                 stubServiceMethodsMap.put(url.getServiceKey(), stubServiceMethods);
             }
         }
 
+        //
         openServer(url);
+
         optimizeSerialization(url);
 
         return exporter;
@@ -312,14 +315,20 @@ public class DubboProtocol extends AbstractProtocol {
     private void openServer(URL url) {
         // find server.
         String key = url.getAddress();
+
+        // NettyClient, NettyServer
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(IS_SERVER_KEY, true);
         if (isServer) {
+
             ExchangeServer server = serverMap.get(key);
+
+            // DCL，Double Check Lock
             if (server == null) {
                 synchronized (this) {
                     server = serverMap.get(key);
                     if (server == null) {
+                        // 创建Server
                         serverMap.put(key, createServer(url));
                     }
                 }
@@ -338,6 +347,8 @@ public class DubboProtocol extends AbstractProtocol {
                 .addParameterIfAbsent(HEARTBEAT_KEY, String.valueOf(DEFAULT_HEARTBEAT))
                 .addParameter(CODEC_KEY, DubboCodec.NAME)
                 .build();
+
+        // 协议的服务器端实现类型，比如：dubbo协议的mina,netty等，http协议的jetty,servlet等，默认为netty
         String str = url.getParameter(SERVER_KEY, DEFAULT_REMOTING_SERVER);
 
         if (str != null && str.length() > 0 && !ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(str)) {
@@ -346,11 +357,13 @@ public class DubboProtocol extends AbstractProtocol {
 
         ExchangeServer server;
         try {
+            // requestHandler是请求处理器，类型为ExchangeHandler
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
         }
 
+        // 协议的客户端实现类型，比如：dubbo协议的mina,netty等
         str = url.getParameter(CLIENT_KEY);
         if (str != null && str.length() > 0) {
             Set<String> supportedTypes = ExtensionLoader.getExtensionLoader(Transporter.class).getSupportedExtensions();

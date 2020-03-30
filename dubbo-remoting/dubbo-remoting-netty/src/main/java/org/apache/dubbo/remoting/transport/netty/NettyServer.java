@@ -62,17 +62,26 @@ public class NettyServer extends AbstractServer implements Server {
     private org.jboss.netty.channel.Channel channel;
 
     public NettyServer(URL url, ChannelHandler handler) throws RemotingException {
+        // 设置线程名，wrap方法会返回一个MultiMessageHandler，这个Handler会被设置到AbstractPeer的handler属性上
+        // 而当netty接收到数据时，会调用AbstractPeer的handler属性的received方法
+        // 所以MultiMessageHandler就是负责处理请求
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 
     @Override
     protected void doOpen() throws Throwable {
         NettyHelper.setNettyLoggerFactory();
+
+        // boss线程，主要监听端口和分配socketChannel给worker线程
         ExecutorService boss = Executors.newCachedThreadPool(new NamedThreadFactory("NettyServerBoss", true));
+        // worker线程负责数据读写
         ExecutorService worker = Executors.newCachedThreadPool(new NamedThreadFactory("NettyServerWorker", true));
+        // iothreads就是读写数据的线程
         ChannelFactory channelFactory = new NioServerSocketChannelFactory(boss, worker, getUrl().getPositiveParameter(IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS));
         bootstrap = new ServerBootstrap(channelFactory);
 
+        // 连接处理器，建立连接、连接断开、接收到数据、返回数据的逻辑都在这个Handler里面
+        // this表示的是NettyServer，在它的父类AbstractServer
         final NettyHandler nettyHandler = new NettyHandler(getUrl(), this);
         channels = nettyHandler.getChannels();
         // https://issues.jboss.org/browse/NETTY-365

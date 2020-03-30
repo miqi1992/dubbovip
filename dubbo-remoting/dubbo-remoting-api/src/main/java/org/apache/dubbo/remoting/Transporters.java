@@ -47,12 +47,16 @@ public class Transporters {
         if (handlers == null || handlers.length == 0) {
             throw new IllegalArgumentException("handlers == null");
         }
+
+        // 如果bind了多个handler，那么当有一个连接过来时，会循环每个handler去处理连接
         ChannelHandler handler;
         if (handlers.length == 1) {
             handler = handlers[0];
         } else {
             handler = new ChannelHandlerDispatcher(handlers);
         }
+
+        // 调用NettyTransporter去绑定
         return getTransporter().bind(url, handler);
     }
 

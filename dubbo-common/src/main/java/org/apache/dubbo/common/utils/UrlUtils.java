@@ -389,16 +389,20 @@ public class UrlUtils {
         String consumerInterface = consumerUrl.getServiceInterface();
         String providerInterface = providerUrl.getServiceInterface();
         //FIXME accept providerUrl with '*' as interface name, after carefully thought about all possible scenarios I think it's ok to add this condition.
+
         if (!(ANY_VALUE.equals(consumerInterface)
                 || ANY_VALUE.equals(providerInterface)
                 || StringUtils.isEquals(consumerInterface, providerInterface))) {
             return false;
         }
 
+        // r
         if (!isMatchCategory(providerUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY),
                 consumerUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY))) {
             return false;
         }
+
+        // 服务不可用了
         if (!providerUrl.getParameter(ENABLED_KEY, true)
                 && !ANY_VALUE.equals(consumerUrl.getParameter(ENABLED_KEY))) {
             return false;
@@ -468,6 +472,7 @@ public class UrlUtils {
         return urls.stream().filter(predicate).collect(Collectors.toList());
     }
 
+    // 如果url是override协议，或者参数category等于configurators，表示url表示的是一种配置资源
     public static boolean isConfigurator(URL url) {
         return OVERRIDE_PROTOCOL.equals(url.getProtocol()) ||
                 CONFIGURATORS_CATEGORY.equals(url.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY));

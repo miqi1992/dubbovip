@@ -79,10 +79,13 @@ public interface Configurator extends Comparable<Configurator> {
 
         List<Configurator> configurators = new ArrayList<>(urls.size());
         for (URL url : urls) {
+            // 如果存在一个empty协议，表示没有配置了
             if (EMPTY_PROTOCOL.equals(url.getProtocol())) {
                 configurators.clear();
                 break;
             }
+
+            // 如果协议不是empty，但是没有任何参数，那么也表示没有
             Map<String, String> override = new HashMap<>(url.getParameters());
             //The anyhost parameter of override may be added automatically, it can't change the judgement of changing url
             override.remove(ANYHOST_KEY);
@@ -90,6 +93,9 @@ public interface Configurator extends Comparable<Configurator> {
                 configurators.clear();
                 continue;
             }
+
+            // 通过ConfiguratorFactory生成一个Configurator对象
+            // 比如override协议对应的就是OverrideConfigurator
             configurators.add(configuratorFactory.getConfigurator(url));
         }
         Collections.sort(configurators);

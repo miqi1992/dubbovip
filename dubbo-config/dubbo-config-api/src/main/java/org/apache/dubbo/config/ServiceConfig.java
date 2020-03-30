@@ -729,6 +729,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
                         // 使用特定的协议进行导出，这里的协议为RegistryProtocol，导出成功后得到一个Exporter
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
+                        System.out.println("protocol====="+protocol.getClass());
                         exporters.add(exporter);
                     }
                 } else {

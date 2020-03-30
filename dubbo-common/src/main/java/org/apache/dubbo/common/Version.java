@@ -45,7 +45,7 @@ public final class Version {
     // version 1.0.0 represents Dubbo rpc protocol before v2.6.2
     public static final int LEGACY_DUBBO_PROTOCOL_VERSION = 10000; // 1.0.0
     // Dubbo implementation version, usually is jar version.
-    private static final String VERSION = getVersion(Version.class, "");
+    private static final String VERSION = getVersion(Version.class, "2.7.0");
 
     /**
      * For protocol compatibility purpose.

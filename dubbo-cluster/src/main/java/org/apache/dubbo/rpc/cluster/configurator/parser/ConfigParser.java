@@ -47,6 +47,7 @@ public class ConfigParser {
         String scope = configuratorConfig.getScope();
         List<ConfigItem> items = configuratorConfig.getConfigs();
 
+        // 转成override:// url
         if (ConfiguratorConfig.SCOPE_APPLICATION.equals(scope)) {
             items.forEach(item -> urls.addAll(appItemToUrls(item, configuratorConfig)));
         } else {

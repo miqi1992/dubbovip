@@ -357,10 +357,10 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     }
 
     /**
-     *
+     * 接收到通知，处理通知的方法
      * @param url      被监听的url
      * @param listener 监听器
-     * @param urls
+     * @param urls      要么有一个empty://，要么有一个或多个override://协议
      */
     @Override
     protected void notify(URL url, NotifyListener listener, List<URL> urls) {
