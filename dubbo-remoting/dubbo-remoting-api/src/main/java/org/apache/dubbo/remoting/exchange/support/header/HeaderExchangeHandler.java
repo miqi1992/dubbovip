@@ -79,6 +79,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
         Response res = new Response(req.getId(), req.getVersion());
+        // 检测请求是否合法，不合法则返回状态码为 BAD_REQUEST 的响应
         if (req.isBroken()) {
             Object data = req.getData();
 
@@ -91,15 +92,21 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                 msg = data.toString();
             }
             res.setErrorMessage("Fail to decode request due to: " + msg);
+
+            // 设置 BAD_REQUEST 状态
             res.setStatus(Response.BAD_REQUEST);
 
             channel.send(res);
             return;
         }
+
+        // 获取 data 字段值，也就是 RpcInvocation 对象
         // find handler by message class.
         Object msg = req.getData();
         try {
+            // 继续向下调用
             CompletionStage<Object> future = handler.reply(channel, msg);
+            // 同步转异步
             future.whenComplete((appResult, t) -> {
                 try {
                     if (t == null) {
@@ -190,8 +197,10 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                     handlerEvent(channel, request);
                 } else {
                     if (request.isTwoWay()) {
+                        // 如果是双向通行，则需要返回调用结果
                         handleRequest(exchangeChannel, request);
                     } else {
+                        // 如果是单向通信，仅向后调用指定服务即可，无需返回调用结果
                         handler.received(exchangeChannel, request.getData());
                     }
                 }
