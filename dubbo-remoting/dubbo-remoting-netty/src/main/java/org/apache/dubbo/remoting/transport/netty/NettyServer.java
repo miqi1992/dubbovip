@@ -65,6 +65,7 @@ public class NettyServer extends AbstractServer implements Server {
         // 设置线程名，wrap方法会返回一个MultiMessageHandler，这个Handler会被设置到AbstractPeer的handler属性上
         // 而当netty接收到数据时，会调用AbstractPeer的handler属性的received方法
         // 所以MultiMessageHandler就是负责处理请求
+        // 而MultiMessageHandler
         super(url, ChannelHandlers.wrap(handler, ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME)));
     }
 

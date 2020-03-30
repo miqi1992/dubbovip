@@ -52,10 +52,15 @@ public class WrappedChannelHandler implements ChannelHandlerDelegate {
         this.url = url;
         executor = (ExecutorService) ExtensionLoader.getExtensionLoader(ThreadPool.class).getAdaptiveExtension().getExecutor(url);
 
+        // 如果是服务提供者，componentKey为java.util.concurrent.ExecutorService
         String componentKey = Constants.EXECUTOR_SERVICE_COMPONENT_KEY;
+        // 如果服务消费者，componentKey为consumer
         if (CONSUMER_SIDE.equalsIgnoreCase(url.getParameter(SIDE_KEY))) {
             componentKey = CONSUMER_SIDE;
         }
+
+        // DataStore底层就是一个map，存储的格式是这样的:{"java.util.concurrent.ExecutorService":{"20880":executor}}
+        // 这里记录了干嘛？应该是在请求处理的时候会用到
         DataStore dataStore = ExtensionLoader.getExtensionLoader(DataStore.class).getDefaultExtension();
         dataStore.put(componentKey, Integer.toString(url.getPort()), executor);
     }

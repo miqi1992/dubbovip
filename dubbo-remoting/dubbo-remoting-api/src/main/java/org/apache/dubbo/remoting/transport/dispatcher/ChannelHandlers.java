@@ -43,6 +43,11 @@ public class ChannelHandlers {
     }
 
     protected ChannelHandler wrapInternal(ChannelHandler handler, URL url) {
+        // 先通过ExtensionLoader.getExtensionLoader(Dispatcher.class).getAdaptiveExtension().dispatch(handler, url)
+        // 得到一个AllChannelHandler(handler, url)
+        // 然后把AllChannelHandler包装成HeartbeatHandler，HeartbeatHandler包装成MultiMessageHandler
+        // 所以当Netty接收到一个数据时，会经历MultiMessageHandler--->HeartbeatHandler---->AllChannelHandler
+        // 而AllChannelHandler会调用handler
         return new MultiMessageHandler(new HeartbeatHandler(ExtensionLoader.getExtensionLoader(Dispatcher.class)
                 .getAdaptiveExtension().dispatch(handler, url)));
     }

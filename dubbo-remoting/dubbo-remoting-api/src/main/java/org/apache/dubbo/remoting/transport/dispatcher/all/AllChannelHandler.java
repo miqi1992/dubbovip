@@ -32,7 +32,9 @@ import java.util.concurrent.RejectedExecutionException;
 
 public class AllChannelHandler extends WrappedChannelHandler {
 
+
     public AllChannelHandler(ChannelHandler handler, URL url) {
+        // 会生成一个线程池
         super(handler, url);
     }
 
@@ -60,6 +62,7 @@ public class AllChannelHandler extends WrappedChannelHandler {
     public void received(Channel channel, Object message) throws RemotingException {
         ExecutorService executor = getExecutorService();
         try {
+            // 交给线程池去处理message
             executor.execute(new ChannelEventRunnable(channel, handler, ChannelState.RECEIVED, message));
         } catch (Throwable t) {
             //TODO A temporary solution to the problem that the exception information can not be sent to the opposite end after the thread pool is full. Need a refactoring
