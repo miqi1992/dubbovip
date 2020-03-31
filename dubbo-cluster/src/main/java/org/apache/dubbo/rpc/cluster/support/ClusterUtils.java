@@ -56,6 +56,7 @@ public class ClusterUtils {
         if (remoteMap != null && remoteMap.size() > 0) {
             map.putAll(remoteMap);
 
+            // 用户自己配置的url中可能也携带了一些参数，自动的把一些服务端才有用的参数移除掉
             // Remove configurations from provider, some items should be affected by provider.
             map.remove(THREAD_NAME_KEY);
             map.remove(DEFAULT_KEY_PREFIX + THREAD_NAME_KEY);
@@ -79,9 +80,11 @@ public class ClusterUtils {
             map.remove(DEFAULT_KEY_PREFIX + Constants.TRANSPORTER_KEY);
         }
 
+        // localMap表示，消费者在调用服务时所知道的参数
         if (localMap != null && localMap.size() > 0) {
             Map<String, String> copyOfLocalMap = new HashMap<>(localMap);
 
+            // 如果url中已经存在GROUP_KEY，则从copyOfLocalMap中移除
             if(map.containsKey(GROUP_KEY)){
                 copyOfLocalMap.remove(GROUP_KEY);
             }
@@ -100,12 +103,14 @@ public class ClusterUtils {
             map.put(REMOTE_APPLICATION_KEY, remoteMap.get(APPLICATION_KEY));
 
             // Combine filters and listeners on Provider and Consumer
+            // 如果url中存在"reference.filter"，map中也存在，那么合并
             String remoteFilter = remoteMap.get(REFERENCE_FILTER_KEY);
             String localFilter = copyOfLocalMap.get(REFERENCE_FILTER_KEY);
             if (remoteFilter != null && remoteFilter.length() > 0
                     && localFilter != null && localFilter.length() > 0) {
                 map.put(REFERENCE_FILTER_KEY, remoteFilter + "," + localFilter);
             }
+            // "invoker.listener"也合并
             String remoteListener = remoteMap.get(INVOKER_LISTENER_KEY);
             String localListener = copyOfLocalMap.get(INVOKER_LISTENER_KEY);
             if (remoteListener != null && remoteListener.length() > 0

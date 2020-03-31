@@ -127,6 +127,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         /**
          * The name of bean that annotated Dubbo's {@link Service @Service} in local Spring {@link ApplicationContext}
          */
+        // 得到引入服务的beanName，ServiceBean:org.apache.dubbo.demo.DemoService
         String referencedBeanName = buildReferencedBeanName(attributes, injectedType);
 
         /**
