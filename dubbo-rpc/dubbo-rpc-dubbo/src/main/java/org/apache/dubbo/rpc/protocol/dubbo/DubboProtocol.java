@@ -442,7 +442,7 @@ public class DubboProtocol extends AbstractProtocol {
 
         List<ReferenceCountExchangeClient> shareClients = null;
 
-        // 如果没有配置connections，那么所有
+        // 如果url上没有配置connections，那么所有就看shareconnections
         // if not configured, connection is shared, otherwise, one connection for one service
         if (connections == 0) {
             useShareConnect = true;
@@ -456,12 +456,15 @@ public class DubboProtocol extends AbstractProtocol {
             shareClients = getSharedClient(url, connections);
         }
 
+        //
         ExchangeClient[] clients = new ExchangeClient[connections];
         for (int i = 0; i < clients.length; i++) {
+            // 如果使用共享的，则利用shareClients
             if (useShareConnect) {
                 clients[i] = shareClients.get(i);
 
             } else {
+                // 不然就初始化，在初始化client时会去连接服务端
                 clients[i] = initClient(url);
             }
         }
@@ -476,10 +479,15 @@ public class DubboProtocol extends AbstractProtocol {
      * @param connectNum connectNum must be greater than or equal to 1
      */
     private List<ReferenceCountExchangeClient> getSharedClient(URL url, int connectNum) {
+        // 这个方法返回的是可以共享的client，要么已经生成过了，要么需要重新生成
+        // 对于已经生成过的client,都会存在referenceClientMap中
+
         String key = url.getAddress();
         List<ReferenceCountExchangeClient> clients = referenceClientMap.get(key);
 
+        // 检查现在的客户端是否都可用，都可用则直接返回
         if (checkClientCanUse(clients)) {
+            // 如果可用每个客户端的引用次数加1
             batchClientRefIncr(clients);
             return clients;
         }
@@ -494,14 +502,16 @@ public class DubboProtocol extends AbstractProtocol {
             }
 
             // connectNum must be greater than or equal to 1
+            // 至少一个
             connectNum = Math.max(connectNum, 1);
 
             // If the clients is empty, then the first initialization is
             if (CollectionUtils.isEmpty(clients)) {
+                // 如果clients为空，则按指定的connectNum生成client
                 clients = buildReferenceCountExchangeClientList(url, connectNum);
                 referenceClientMap.put(key, clients);
-
             } else {
+                // 如果clients不为空，则遍历这些client，对于不可用的client，则重新生成一个client
                 for (int i = 0; i < clients.size(); i++) {
                     ReferenceCountExchangeClient referenceCountExchangeClient = clients.get(i);
                     // If there is a client in the list that is no longer available, create a new one to replace him.
@@ -586,8 +596,10 @@ public class DubboProtocol extends AbstractProtocol {
      * @return
      */
     private ReferenceCountExchangeClient buildReferenceCountExchangeClient(URL url) {
+        // 生成一个ExchangeClient
         ExchangeClient exchangeClient = initClient(url);
 
+        // 包装成ReferenceCountExchangeClient
         return new ReferenceCountExchangeClient(exchangeClient);
     }
 
@@ -599,13 +611,18 @@ public class DubboProtocol extends AbstractProtocol {
     private ExchangeClient initClient(URL url) {
 
         // client type setting.
+        // 拿设置的client，默认为netty
         String str = url.getParameter(CLIENT_KEY, url.getParameter(SERVER_KEY, DEFAULT_REMOTING_CLIENT));
 
+        // 编码方式
         url = url.addParameter(CODEC_KEY, DubboCodec.NAME);
+
         // enable heartbeat by default
+        // 心跳， 默认60 * 1000,60秒一个心跳
         url = url.addParameterIfAbsent(HEARTBEAT_KEY, String.valueOf(DEFAULT_HEARTBEAT));
 
         // BIO is not allowed since it has severe performance issue.
+        // 如果没有指定的client扩展，则抛异常
         if (str != null && str.length() > 0 && !ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(str)) {
             throw new RpcException("Unsupported client type: " + str + "," +
                     " supported client type is " + StringUtils.join(ExtensionLoader.getExtensionLoader(Transporter.class).getSupportedExtensions(), " "));
@@ -618,6 +635,9 @@ public class DubboProtocol extends AbstractProtocol {
                 client = new LazyConnectExchangeClient(url, requestHandler);
 
             } else {
+                // client是在refer的时候生成的，这个时候就已经建立好连接了？
+                // 答案是就是会去建立连接，也是能够理解了，只有连接建立好了才有client和server之分
+                // 先建立连接，在调用方法时再基于这个连接去发送数据
                 client = Exchangers.connect(url, requestHandler);
             }
 

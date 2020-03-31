@@ -85,8 +85,10 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                             + " connect to the server " + getRemoteAddress() + ", cause: " + t.getMessage(), t);
         }
 
+        // 得到消费端的线程池
         executor = (ExecutorService) ExtensionLoader.getExtensionLoader(DataStore.class)
                 .getDefaultExtension().get(CONSUMER_SIDE, Integer.toString(url.getPort()));
+
         ExtensionLoader.getExtensionLoader(DataStore.class)
                 .getDefaultExtension().remove(CONSUMER_SIDE, Integer.toString(url.getPort()));
     }
