@@ -420,9 +420,11 @@ public class DubboProtocol extends AbstractProtocol {
 
     @Override
     public <T> Invoker<T> protocolBindingRefer(Class<T> serviceType, URL url) throws RpcException {
+        // 优化序列化？在dubbo的protocol中可以通过serialization配置序列化方式，但是这里的optimizer属性是干嘛的？
         optimizeSerialization(url);
 
         // create rpc invoker.
+        // clients很重要
         DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
         invokers.add(invoker);
 
@@ -434,8 +436,13 @@ public class DubboProtocol extends AbstractProtocol {
 
         boolean useShareConnect = false;
 
+        // connections表示对每个提供者的最大连接数，rmi、http、hessian等短连接协议表示限制连接数，
+        // dubbo等长连接协表示建立的长连接个数
         int connections = url.getParameter(CONNECTIONS_KEY, 0);
+
         List<ReferenceCountExchangeClient> shareClients = null;
+
+        // 如果没有配置connections，那么所有
         // if not configured, connection is shared, otherwise, one connection for one service
         if (connections == 0) {
             useShareConnect = true;

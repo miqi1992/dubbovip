@@ -88,6 +88,7 @@ public abstract class AbstractProtocol implements Protocol {
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // 异步转同步Invoker , type是接口，url是服务地址
         return new AsyncToSyncInvoker<>(protocolBindingRefer(type, url));
     }
 

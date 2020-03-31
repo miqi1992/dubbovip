@@ -94,6 +94,7 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
 
     @Override
     protected List<Invoker<T>> doList(Invocation invocation) throws RpcException {
+        // 把当前静态服务中的invokers按路由策略进行过滤得到finalInvokers
         List<Invoker<T>> finalInvokers = invokers;
         if (routerChain != null) {
             try {

@@ -79,22 +79,33 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
         inv.setAttachment(PATH_KEY, getUrl().getPath());
         inv.setAttachment(VERSION_KEY, version);
 
+        // 一个DubboInvoker对象可能并发的同时去调用某个服务
+        // 那么单独的一次调用都需要一个单独的client去发送请求
+        // 所以这里会去选择使用本次调用该使用哪个client
         ExchangeClient currentClient;
         if (clients.length == 1) {
             currentClient = clients[0];
         } else {
+            // 轮询使用clients
             currentClient = clients[index.getAndIncrement() % clients.length];
         }
+
         try {
+            // isOneway为true，表示请求不需要拿结果
             boolean isOneway = RpcUtils.isOneway(getUrl(), invocation);
+            // 拿当前方法的所配置的超时时间，默认为1000,1秒
             int timeout = getUrl().getMethodPositiveParameter(methodName, TIMEOUT_KEY, DEFAULT_TIMEOUT);
             if (isOneway) {
                 boolean isSent = getUrl().getMethodParameter(methodName, Constants.SENT_KEY, false);
                 currentClient.send(inv, isSent);
+                // 生成一个默认的值的结果，value=null
                 return AsyncRpcResult.newDefaultAsyncResult(invocation);
             } else {
                 AsyncRpcResult asyncRpcResult = new AsyncRpcResult(inv);
+                // 异步去请求，得到一个CompletableFuture
                 CompletableFuture<Object> responseFuture = currentClient.request(inv, timeout);
+
+                // responseFuture会完成后会调用asyncRpcResult中的方法，这里并不会阻塞，如果要达到阻塞的效果在外层使用asyncRpcResult去控制
                 asyncRpcResult.subscribeTo(responseFuture);
                 // save for 2.6.x compatibility, for example, TraceFilter in Zipkin uses com.alibaba.xxx.FutureAdapter
                 FutureContext.getContext().setCompatibleFuture(responseFuture);
