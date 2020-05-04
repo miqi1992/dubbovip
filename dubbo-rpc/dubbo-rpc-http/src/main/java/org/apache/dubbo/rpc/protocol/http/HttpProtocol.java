@@ -119,6 +119,8 @@ public class HttpProtocol extends AbstractProxyProtocol {
     @SuppressWarnings("unchecked")
     @Override
     protected <T> T doRefer(final Class<T> serviceType, URL url) throws RpcException {
+        // json-rpc了解一下，jsonrpc4j
+        // https://segmentfault.com/a/1190000018807729?utm_source=tag-newest
         JsonProxyFactoryBean jsonProxyFactoryBean = new JsonProxyFactoryBean();
         jsonProxyFactoryBean.setServiceUrl(url.setProtocol("http").toIdentityString());
         jsonProxyFactoryBean.setServiceInterface(serviceType);

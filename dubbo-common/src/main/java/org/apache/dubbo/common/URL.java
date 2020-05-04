@@ -1262,6 +1262,7 @@ class URL implements Serializable {
      * The format is "{interface}:[version]:[group]"
      * @return
      */
+    // 这是URL中的方法了
     public String getColonSeparatedKey() {
         StringBuilder serviceNameBuilder = new StringBuilder();
         append(serviceNameBuilder, INTERFACE_KEY, true);

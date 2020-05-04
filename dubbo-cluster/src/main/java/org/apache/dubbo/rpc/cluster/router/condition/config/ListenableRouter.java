@@ -52,6 +52,8 @@ public abstract class ListenableRouter extends AbstractRouter implements Configu
     public ListenableRouter(DynamicConfiguration configuration, URL url, String ruleKey) {
         super(configuration, url);
         this.force = false;
+        // ruleKey为服务名或应用名
+        // 初始化，会绑定一个监听器，负责监听配置中心条件路由的修改，并且会主动从配置中心获取一下当前条件路由的数据并做解析
         this.init(ruleKey);
     }
 
@@ -63,11 +65,14 @@ public abstract class ListenableRouter extends AbstractRouter implements Configu
         }
 
         if (event.getChangeType().equals(ConfigChangeType.DELETED)) {
+            // 如果是一个删除时间，则清空当前Router中的conditionRouters属性，表示当前Router对象中没有路由规则
             routerRule = null;
             conditionRouters = Collections.emptyList();
         } else {
             try {
+                // 解析路由规则
                 routerRule = ConditionRuleParser.parse(event.getValue());
+                // 根据路由规则，生成ConditionRouter-条件路由对象，并赋值给当前Router对象的conditionRouters属性
                 generateConditions(routerRule);
             } catch (Exception e) {
                 logger.error("Failed to parse the raw condition rule and it will not take effect, please check " +
@@ -117,10 +122,15 @@ public abstract class ListenableRouter extends AbstractRouter implements Configu
         if (StringUtils.isEmpty(ruleKey)) {
             return;
         }
+        // 服务名+".condition-router"，或应用名+".condition-router"
         String routerKey = ruleKey + RULE_SUFFIX;
+        // 绑定一个监听器去监听routerKey对应的路径，当前类ListenableRouter就自带了一个监听器
         configuration.addListener(routerKey, this);
+        // 绑定完监听器后主动的从配置中心获取一下routerKey路径下对应的数据
         String rule = configuration.getRule(routerKey, DynamicConfiguration.DEFAULT_GROUP);
+
         if (StringUtils.isNotEmpty(rule)) {
+            // 手动调用监听器处理事件的方法process()
             this.process(new ConfigChangeEvent(routerKey, rule));
         }
     }

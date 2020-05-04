@@ -95,6 +95,7 @@ public class AdaptiveClassCodeGenerator {
         code.append(generateImports());
         code.append(generateClassDeclaration());
 
+        // 遍历接口中的方法，生成代理方法
         Method[] methods = type.getMethods();
         for (Method method : methods) {
             code.append(generateMethod(method));
@@ -189,6 +190,7 @@ public class AdaptiveClassCodeGenerator {
      * generate method URL argument null check
      */
     private String generateUrlNullCheck(int index) {
+        // 这里会定义URL url局部变量
         return String.format(CODE_URL_NULL_CHECK, index, URL.class.getName(), index);
     }
 
@@ -196,14 +198,19 @@ public class AdaptiveClassCodeGenerator {
      * generate method content
      */
     private String generateMethodContent(Method method) {
+        // 方法上存在Adaptive注解才进行代理
         Adaptive adaptiveAnnotation = method.getAnnotation(Adaptive.class);
         StringBuilder code = new StringBuilder(512);
         if (adaptiveAnnotation == null) {
             return generateUnsupported(method);
         } else {
+            // 方法中URL类型参数的下标
             int urlTypeIndex = getUrlTypeIndex(method);
 
             // found parameter in URL type
+            // 寻找URL
+            // 1. 如果当前方法中有URl类型的参数，那么url就是该参数值
+            // 2. 如果当前方法中没有URL类型的参数，但是当前方法中有某个类型中的get方法返回了URl类型，那么就调用那个get方法得到一个url对象
             if (urlTypeIndex != -1) {
                 // Null Point check
                 code.append(generateUrlNullCheck(urlTypeIndex));
@@ -212,11 +219,14 @@ public class AdaptiveClassCodeGenerator {
                 code.append(generateUrlAssignmentIndirectly(method));
             }
 
+            // 根据这个value去找具体的扩展类
             String[] value = getMethodAdaptiveValue(adaptiveAnnotation);
 
+            // 方法中有Invocation类型的参数
             boolean hasInvocation = hasInvocationArgument(method);
 
             code.append(generateInvocationArgumentNullCheck(method));
+
 
             code.append(generateExtNameAssignment(value, hasInvocation));
             // check extName == null?
@@ -316,6 +326,8 @@ public class AdaptiveClassCodeGenerator {
      */
     private String generateInvocationArgumentNullCheck(Method method) {
         Class<?>[] pts = method.getParameterTypes();
+
+        // 遍历方法中的每个参数
         return IntStream.range(0, pts.length).filter(i -> CLASSNAME_INVOCATION.equals(pts[i].getName()))
                         .mapToObj(i -> String.format(CODE_INVOCATION_ARGUMENT_NULL_CHECK, i, i))
                         .findFirst().orElse("");
@@ -328,6 +340,7 @@ public class AdaptiveClassCodeGenerator {
         String[] value = adaptiveAnnotation.value();
         // value is not set, use the value generated from class name as the key
         if (value.length == 0) {
+            // 如果Adaptive注解中没有指定值，那么就取接口的简名，比如type是org.apache.dubbo.rpc.Protocol，那么splitName就是protocol
             String splitName = StringUtils.camelToSplitName(type.getSimpleName(), ".");
             value = new String[]{splitName};
         }
@@ -345,6 +358,7 @@ public class AdaptiveClassCodeGenerator {
         Class<?>[] pts = method.getParameterTypes();
 
         // find URL getter method
+        // 遍历方法中的每个参数，遍历每个参数类型中的get方法，如get方法的返回类型为URL
         for (int i = 0; i < pts.length; ++i) {
             for (Method m : pts[i].getMethods()) {
                 String name = m.getName();
@@ -377,6 +391,7 @@ public class AdaptiveClassCodeGenerator {
         code.append(String.format("if (arg%d.%s() == null) throw new IllegalArgumentException(\"%s argument %s() == null\");\n",
                 index, method, type.getName(), method));
 
+        // 这里是创建了一个URL url的局部变量    Url url = arg1.getUrl();
         code.append(String.format("%s url = arg%d.%s();\n", URL.class.getName(), index, method));
         return code.toString();
     }

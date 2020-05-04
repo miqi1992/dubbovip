@@ -282,7 +282,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (initialized) {
             return;
         }
-        //
+
         checkStubAndLocal(interfaceClass);
         checkMock(interfaceClass);
         Map<String, String> map = new HashMap<String, String>();
@@ -336,6 +336,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         map.put(REGISTER_IP_KEY, hostToRegistry);
 
+        // 得到一个代理对象
         ref = createProxy(map);
 
         String serviceKey = URL.buildKey(interfaceName, group, version);
@@ -435,11 +436,13 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                     // use RegistryAwareCluster only when register's CLUSTER is available
                     URL u = registryURL.addParameter(CLUSTER_KEY, RegistryAwareCluster.NAME);
 
-                    // StaticDirectory表示静态服务目录，里面的invokers是不会变得
+                    // StaticDirectory表示静态服务目录，里面的invokers是不会变的
+                    // 生成一个FailoverClusterInvoker
                     // The invoker wrap relation would be: RegistryAwareClusterInvoker(StaticDirectory) -> FailoverClusterInvoker(RegistryDirectory, will execute route) -> Invoker
                     invoker = CLUSTER.join(new StaticDirectory(u, invokers));
                 } else { // not a registry url, must be direct invoke.
-                    // 如果不存在注册中心地址，则
+                    // 如果不存在注册中心地址
+                    // 生成一个FailoverClusterInvoker
                     invoker = CLUSTER.join(new StaticDirectory(invokers));
                 }
             }

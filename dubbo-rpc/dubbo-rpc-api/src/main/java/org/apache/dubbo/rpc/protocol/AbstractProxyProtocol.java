@@ -102,15 +102,20 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
 
     @Override
     protected <T> Invoker<T> protocolBindingRefer(final Class<T> type, final URL url) throws RpcException {
+        // 先调用doRefer方法，得到一个jsonrpc的客户端，生成一个代理Invoker
         final Invoker<T> target = proxyFactory.getInvoker(doRefer(type, url), type, url);
+
+        // 然后在生成一个invoker
         Invoker<T> invoker = new AbstractInvoker<T>(type, url) {
             @Override
             protected Result doInvoke(Invocation invocation) throws Throwable {
                 try {
+                    //
                     Result result = target.invoke(invocation);
                     // FIXME result is an AsyncRpcResult instance.
                     Throwable e = result.getException();
                     if (e != null) {
+                        // 如果调用结果的异常属于rpc异常，则抛出一个RpcException
                         for (Class<?> rpcException : rpcExceptions) {
                             if (rpcException.isAssignableFrom(e.getClass())) {
                                 throw getRpcException(type, url, invocation, e);

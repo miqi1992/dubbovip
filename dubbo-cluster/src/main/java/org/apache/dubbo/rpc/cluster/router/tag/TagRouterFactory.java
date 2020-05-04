@@ -28,6 +28,7 @@ import org.apache.dubbo.rpc.cluster.Router;
 @Activate(order = 100)
 public class TagRouterFactory extends CacheableRouterFactory {
 
+
     public static final String NAME = "tag";
 
     @Override

@@ -420,23 +420,33 @@ public class RegistryProtocol implements Protocol {
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+
+        // 从registry://的url中获取对应的注册中心，比如zookeeper， 默认为dubbo，dubbo提供了自带的注册中心实现
+        // registry:// ---> zookeeper://
         url = URLBuilder.from(url)
                 .setProtocol(url.getParameter(REGISTRY_KEY, DEFAULT_REGISTRY))
                 .removeParameter(REGISTRY_KEY)
                 .build();
+
+        // 拿到注册中心实现，ZookeeperRegistry
         Registry registry = registryFactory.getRegistry(url);
+        // 下面这个代码，通过过git历史提交记录是用来解决SimpleRegistry不可用的问题
         if (RegistryService.class.equals(type)) {
             return proxyFactory.getInvoker((T) registry, type, url);
         }
 
-        // group="a,b" or group="*"
+        // qs表示 queryString, 表示url中的参数
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
+
+        // group="a,b" or group="*"
         String group = qs.get(GROUP_KEY);
         if (group != null && group.length() > 0) {
             if ((COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {
+                // group有多个值，利用MergeableCluster去生成Invoker
                 return doRefer(getMergeableCluster(), registry, type, url);
             }
         }
+        // group没有值，或者有特定的组
         return doRefer(cluster, registry, type, url);
     }
 
@@ -445,20 +455,33 @@ public class RegistryProtocol implements Protocol {
     }
 
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
+        // RegistryDirectory表示动态服务目录，会和注册中心的数据保持同步
+        // type表示一个服务对应一个RegistryDirectory，url表示注册中心地址
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
+
+
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
+
+        // 订阅url，不要把它理解为订阅地址，可以把这个url理解为订阅地址的信息在这个url中
         URL subscribeUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (!ANY_VALUE.equals(url.getServiceInterface()) && url.getParameter(REGISTER_KEY, true)) {
             directory.setRegisteredConsumerUrl(getRegisteredConsumerUrl(subscribeUrl, url));
             registry.register(directory.getRegisteredConsumerUrl());
         }
+        // 构造路由链,路由链会在引入服务时按路由条件进行过滤
+        // 路由链是动态服务目录中的一个属性，通过路由链可以过滤某些服务提供者
         directory.buildRouterChain(subscribeUrl);
+        // 动态服务目录订阅其他几个路径
+        // PROVIDERS_CATEGORY: 表示服务提供者目录，当服务提供者发生了变化，那么就要更新directory
+        // CONFIGURATORS_CATEGORY：表示配置配置，当在配置中心修改了消费者的参数时，更新directory
+        // ROUTERS_CATEGORY：
         directory.subscribe(subscribeUrl.addParameter(CATEGORY_KEY,
                 PROVIDERS_CATEGORY + "," + CONFIGURATORS_CATEGORY + "," + ROUTERS_CATEGORY));
 
+        // 使用cluster把服务目录包装成一个invoker
         Invoker invoker = cluster.join(directory);
         ProviderConsumerRegTable.registerConsumer(invoker, url, subscribeUrl, directory);
         return invoker;

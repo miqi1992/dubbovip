@@ -130,7 +130,7 @@ public interface DynamicConfiguration extends Configuration {
 
      /**
      * The format is '{interfaceName}:[version]:[group]'
-     *
+     *  得到服务名
      * @return
      */
      static String getRuleKey(URL url) {

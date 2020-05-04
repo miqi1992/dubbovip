@@ -47,13 +47,23 @@ public class RouterChain<T> {
     }
 
     private RouterChain(URL url) {
+        // 拿到RouterFactory接口有哪些扩展实现类，比如默认情况下就有四个：
+        // 0 = {MockRouterFactory@2880}
+        // 1 = {TagRouterFactory@2881}      // 标签路由
+        // 2 = {AppRouterFactory@2882}      // 应用条件路由
+        // 3 = {ServiceRouterFactory@2883}  // 服务条件路由
         List<RouterFactory> extensionFactories = ExtensionLoader.getExtensionLoader(RouterFactory.class)
                 .getActivateExtension(url, (String[]) null);
 
+        // 然后利用RouterFactory根据url生成各个类型的Router
+        // 这里生产的routers已经是真实可用的了，但是有个比较特殊的：
+        // 对于应用条件路由和服务条件路由对于的Router对象，对象内部已经有真实可用的数据了（数据已经从配置中心得到了）
+        // 但是对于标签路由则没有，它暂时还相当于一个没有内容的对象（还没有从配置中心获取标签路由的数据）
         List<Router> routers = extensionFactories.stream()
                 .map(factory -> factory.getRouter(url))
                 .collect(Collectors.toList());
 
+        // 把routers按priority进行排序
         initWithRouters(routers);
     }
 
@@ -84,6 +94,7 @@ public class RouterChain<T> {
     }
 
     private void sort() {
+        // Router接口中有一个默认方法compareTo，会按照priority进行排序
         Collections.sort(routers);
     }
 
