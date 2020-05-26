@@ -289,6 +289,7 @@ public abstract class AbstractConfig implements Serializable {
             throw new IllegalStateException("method config error : return attribute must be set true when onreturn or onthrow has been set.");
         }
 
+
         ConsumerMethodModel.AsyncMethodInfo asyncMethodInfo = new ConsumerMethodModel.AsyncMethodInfo();
 
         asyncMethodInfo.setOninvokeInstance(methodConfig.getOninvoke());

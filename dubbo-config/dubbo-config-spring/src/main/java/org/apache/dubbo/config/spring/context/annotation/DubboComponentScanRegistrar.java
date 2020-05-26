@@ -56,7 +56,7 @@ public class DubboComponentScanRegistrar implements ImportBeanDefinitionRegistra
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         System.out.println("执行DubboComponentScanRegistrar");
 
-        // 拿到DubboComponentScan注解所定义的包路径
+        // 拿到DubboComponentScan注解所定义的包路径，扫描该package下的类，识别这些类上
         Set<String> packagesToScan = getPackagesToScan(importingClassMetadata);
         // 注册ServiceAnnotationBeanPostProcessor
         registerServiceAnnotationBeanPostProcessor(packagesToScan, registry);
@@ -91,6 +91,7 @@ public class DubboComponentScanRegistrar implements ImportBeanDefinitionRegistra
     private void registerReferenceAnnotationBeanPostProcessor(BeanDefinitionRegistry registry) {
 
         // Register @Reference Annotation Bean Processor
+        // 注册一个ReferenceAnnotationBeanPostProcessor做为bean，ReferenceAnnotationBeanPostProcessor是一个BeanPostProcessor
         BeanRegistrar.registerInfrastructureBean(registry,
                 ReferenceAnnotationBeanPostProcessor.BEAN_NAME, ReferenceAnnotationBeanPostProcessor.class);
 

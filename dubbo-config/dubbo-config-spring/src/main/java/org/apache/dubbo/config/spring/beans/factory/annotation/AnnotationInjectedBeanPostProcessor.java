@@ -142,6 +142,7 @@ public abstract class AnnotationInjectedBeanPostProcessor extends
     public PropertyValues postProcessPropertyValues(
             PropertyValues pvs, PropertyDescriptor[] pds, Object bean, String beanName) throws BeanCreationException {
 
+        // 注入属性
         InjectionMetadata metadata = findInjectionMetadata(beanName, bean.getClass(), pvs);
         try {
             metadata.inject(bean, beanName, pvs);
@@ -239,6 +240,7 @@ public abstract class AnnotationInjectedBeanPostProcessor extends
     private AnnotationInjectedBeanPostProcessor.AnnotatedInjectionMetadata buildAnnotatedMetadata(final Class<?> beanClass) {
         Collection<AnnotationInjectedBeanPostProcessor.AnnotatedFieldElement> fieldElements = findFieldAnnotationMetadata(beanClass);
         Collection<AnnotationInjectedBeanPostProcessor.AnnotatedMethodElement> methodElements = findAnnotatedMethodMetadata(beanClass);
+        // 返回的是Dubbo定义的AnnotatedInjectionMetadata，接下来就会使用这个类去进行属性注入
         return new AnnotationInjectedBeanPostProcessor.AnnotatedInjectionMetadata(beanClass, fieldElements, methodElements);
 
     }
@@ -357,6 +359,7 @@ public abstract class AnnotationInjectedBeanPostProcessor extends
         Object injectedObject = injectedObjectsCache.get(cacheKey);
 
         if (injectedObject == null) {
+            // 调用该方法获得某个对象
             injectedObject = doGetInjectedBean(attributes, bean, beanName, injectedType, injectedElement);
             // Customized inject-object if necessary
             injectedObjectsCache.putIfAbsent(cacheKey, injectedObject);
@@ -534,13 +537,16 @@ public abstract class AnnotationInjectedBeanPostProcessor extends
 
         @Override
         protected void inject(Object bean, String beanName, PropertyValues pvs) throws Throwable {
+            // 给bean对象进行属性赋值
 
             Class<?> injectedType = field.getType();
 
+            // 获取对象，然后进行注入
             Object injectedObject = getInjectedObject(attributes, bean, beanName, injectedType, this);
 
             ReflectionUtils.makeAccessible(field);
 
+            // 字段赋值，injectedObject就是值
             field.set(bean, injectedObject);
 
         }

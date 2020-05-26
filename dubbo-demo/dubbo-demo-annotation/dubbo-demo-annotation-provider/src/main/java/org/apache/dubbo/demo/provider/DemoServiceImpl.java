@@ -26,13 +26,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Service
+import java.util.concurrent.TimeUnit;
+
+@Service(timeout = 3000)
 public class DemoServiceImpl implements DemoService {
     private static final Logger logger = LoggerFactory.getLogger(DemoServiceImpl.class);
 
     @Override
     public String sayHello(String name) {
         logger.info("Hello " + name + ", request from consumer: " + RpcContext.getContext().getRemoteAddress());
+
+        try {
+            TimeUnit.SECONDS.sleep(30);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         return "Hello " + name + ", response from provider: " + RpcContext.getContext().getLocalAddress();
     }
 

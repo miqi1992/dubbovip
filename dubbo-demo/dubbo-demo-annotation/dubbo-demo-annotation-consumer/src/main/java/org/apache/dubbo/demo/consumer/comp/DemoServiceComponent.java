@@ -19,6 +19,7 @@
 
 package org.apache.dubbo.demo.consumer.comp;
 
+import org.apache.dubbo.config.annotation.Method;
 import org.apache.dubbo.config.annotation.Reference;
 import org.apache.dubbo.demo.DemoService;
 
@@ -27,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Component("demoServiceComponent")
 public class DemoServiceComponent implements DemoService {
 
-    @Reference
+    @Reference(timeout = 300, cluster = "failfast")
     private DemoService demoService;
 
     @Override

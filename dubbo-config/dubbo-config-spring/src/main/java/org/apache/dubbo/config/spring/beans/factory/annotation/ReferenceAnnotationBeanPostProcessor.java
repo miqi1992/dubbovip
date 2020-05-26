@@ -120,6 +120,8 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         return Collections.unmodifiableMap(injectedMethodReferenceBeanCache);
     }
 
+    // 该方法得到的对象会赋值给@ReferenceBean注解的属性
+    //
     @Override
     protected Object doGetInjectedBean(AnnotationAttributes attributes, Object bean, String beanName, Class<?> injectedType,
                                        InjectionMetadata.InjectedElement injectedElement) throws Exception {
@@ -127,20 +129,26 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         /**
          * The name of bean that annotated Dubbo's {@link Service @Service} in local Spring {@link ApplicationContext}
          */
-        // 得到引入服务的beanName，ServiceBean:org.apache.dubbo.demo.DemoService
+        // 得到引入服务的beanName
+        // attributes里存的是@Reference注解中的所配置的属性与值
+        // injectedType表示引入的服务的接口
+        // referencedBeanName的值为  ServiceBean:org.apache.dubbo.demo.DemoService
         String referencedBeanName = buildReferencedBeanName(attributes, injectedType);
 
         /**
          * The name of bean that is declared by {@link Reference @Reference} annotation injection
          */
+        // @Reference(methods=[Lorg.apache.dubbo.config.annotation.Method;@39b43d60) org.apache.dubbo.demo.DemoService
         String referenceBeanName = getReferenceBeanName(attributes, injectedType);
 
         ReferenceBean referenceBean = buildReferenceBeanIfAbsent(referenceBeanName, attributes, injectedType);
 
+        // 把referenceBean添加到Spring容器中去
         registerReferenceBean(referencedBeanName, referenceBean, attributes, injectedType);
 
         cacheInjectedReferenceBean(referenceBean, injectedElement);
 
+        // 创建一个代理对象，Service中的属性被注入的就是这个代理对象
         return getOrCreateProxy(referencedBeanName, referenceBeanName, referenceBean, injectedType);
     }
 
@@ -160,7 +168,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 
         String beanName = getReferenceBeanName(attributes, interfaceClass);
-
+        // 要引入的服务就是本地Spring容器中的一个服务
         if (existsServiceBean(referencedBeanName)) { // If @Service bean is local one
             /**
              * Get  the @Service's BeanDefinition from {@link BeanFactory}
@@ -244,6 +252,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
             return newProxyInstance(getClassLoader(), new Class[]{serviceInterfaceType},
                     wrapInvocationHandler(referenceBeanName, referenceBean));
         } else {                                    // ReferenceBean should be initialized and get immediately
+            // 重点
             return referenceBean.get();
         }
     }

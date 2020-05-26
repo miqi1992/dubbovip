@@ -54,6 +54,10 @@ public class ProtocolFilterWrapper implements Protocol {
         Invoker<T> last = invoker;
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
 
+        // ConsumerContextFilter--->FutureFilter--->MonitorFilter
+        // ConsumerContextFilter用来设置RpcContext
+        //
+
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);
@@ -79,6 +83,7 @@ public class ProtocolFilterWrapper implements Protocol {
                     public Result invoke(Invocation invocation) throws RpcException {
                         Result asyncResult;
                         try {
+                            // 得到一个异步结果
                             asyncResult = filter.invoke(next, invocation);
                         } catch (Exception e) {
                             // onError callback

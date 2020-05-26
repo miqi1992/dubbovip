@@ -75,6 +75,7 @@ public class ListenerInvokerWrapper<T> implements Invoker<T> {
 
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
+        // AsyncToSyncInvoker
         return invoker.invoke(invocation);
     }
 

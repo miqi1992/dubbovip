@@ -312,6 +312,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         // appendParameters(map, consumer, Constants.DEFAULT_KEY);
         appendParameters(map, consumer);
         appendParameters(map, this);
+
         Map<String, Object> attributes = null;
         if (CollectionUtils.isNotEmpty(methods)) {
             attributes = new HashMap<String, Object>();
@@ -324,6 +325,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         map.put(methodConfig.getName() + ".retries", "0");
                     }
                 }
+
                 attributes.put(methodConfig.getName(), convertMethodConfig2AsyncInfo(methodConfig));
             }
         }

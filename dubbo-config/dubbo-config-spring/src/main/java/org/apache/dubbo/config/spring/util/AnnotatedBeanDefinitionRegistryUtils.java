@@ -109,7 +109,7 @@ public abstract class AnnotatedBeanDefinitionRegistryUtils {
         if (logger.isDebugEnabled()) {
             logger.debug(registry.getClass().getSimpleName() + " will register annotated classes : " + asList(annotatedClasses) + " .");
         }
-
+        // 通过AnnotatedBeanDefinitionReader来解析DubboConfigConfiguration.Single.class类中的注解
         reader.register(annotatedClasses);
 
     }

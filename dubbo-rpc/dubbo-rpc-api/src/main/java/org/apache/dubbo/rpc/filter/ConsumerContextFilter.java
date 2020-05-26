@@ -45,6 +45,7 @@ public class ConsumerContextFilter extends ListenableFilter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+        // 设置RpcContext参数
         RpcContext.getContext()
                 .setInvoker(invoker)
                 .setInvocation(invocation)
@@ -57,6 +58,7 @@ public class ConsumerContextFilter extends ListenableFilter {
         }
         try {
             RpcContext.removeServerContext();
+
             return invoker.invoke(invocation);
         } finally {
             RpcContext.removeContext();

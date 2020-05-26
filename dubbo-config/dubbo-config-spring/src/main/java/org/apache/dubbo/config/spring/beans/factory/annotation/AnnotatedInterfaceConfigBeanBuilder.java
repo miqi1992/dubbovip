@@ -133,6 +133,7 @@ public abstract class AnnotatedInterfaceConfigBeanBuilder<C extends AbstractInte
 
         String monitorBeanName = resolveMonitorConfigBeanName(attributes);
 
+        // 从Spring容器获取MonitorConfig的bean对象
         MonitorConfig monitorConfig = getOptionalBean(applicationContext, monitorBeanName, MonitorConfig.class);
 
         configBean.setMonitor(monitorConfig);
