@@ -19,20 +19,19 @@
 
 package org.apache.dubbo.demo.consumer.comp;
 
-import org.apache.dubbo.config.annotation.Method;
 import org.apache.dubbo.config.annotation.Reference;
 import org.apache.dubbo.demo.DemoService;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component("demoServiceComponent")
-public class DemoServiceComponent implements DemoService {
+@Component("demoServiceComponent1")
+public class DemoServiceComponent1 implements DemoService {
 
-    @Reference(timeout = 3000, consumer = "xx")
-    private DemoService demoService;
+    @Autowired
+    private DemoService demoServiceComponent;
 
     @Override
     public String sayHello(String name) {
-        return demoService.sayHello(name);
+        return demoServiceComponent.sayHello(name);
     }
 }

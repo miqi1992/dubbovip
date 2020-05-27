@@ -131,16 +131,19 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
          */
         // 得到引入服务的beanName
         // attributes里存的是@Reference注解中的所配置的属性与值
-        // injectedType表示引入的服务的接口
-        // referencedBeanName的值为  ServiceBean:org.apache.dubbo.demo.DemoService
+        // injectedType表示引入的是哪个服务接口
+        // referencedBeanName的值为  ServiceBean:org.apache.dubbo.demo.DemoService  表示得到该服务Bean的beanName
+        // referencedBeanName表示 我现在要引用的这个服务，它导出时对应的ServiceBean的beanName是什么，可以用来判断现在我引用的这个服务是不是我自己导出的
         String referencedBeanName = buildReferencedBeanName(attributes, injectedType);
 
         /**
          * The name of bean that is declared by {@link Reference @Reference} annotation injection
          */
         // @Reference(methods=[Lorg.apache.dubbo.config.annotation.Method;@39b43d60) org.apache.dubbo.demo.DemoService
+        // 我要生成一个RefrenceBean，对应的beanName， 根据@Reference注解来标识不同
         String referenceBeanName = getReferenceBeanName(attributes, injectedType);
 
+        // 生成一个ReferenceBean对象
         ReferenceBean referenceBean = buildReferenceBeanIfAbsent(referenceBeanName, attributes, injectedType);
 
         // 把referenceBean添加到Spring容器中去
@@ -149,6 +152,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         cacheInjectedReferenceBean(referenceBean, injectedElement);
 
         // 创建一个代理对象，Service中的属性被注入的就是这个代理对象
+        // 内部会调用referenceBean.get();
         return getOrCreateProxy(referencedBeanName, referenceBeanName, referenceBean, injectedType);
     }
 
@@ -167,8 +171,12 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
 
         ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 
+        // @Reference(parameters=[Ljava.lang.String;@72ef8d15) org.apache.dubbo.demo.DemoService
+        // ReferenceBean的beanName，注意这个beanName，它是直接取的@Reference的全信息
+        // 所以，就算引用的是同一个服务，如果@Reference注解上的信息不同，那么就会生成不同的ReferenceBean
         String beanName = getReferenceBeanName(attributes, interfaceClass);
-        // 要引入的服务就是本地Spring容器中的一个服务
+
+        // 要引入的服务就是本地提供的一个服务
         if (existsServiceBean(referencedBeanName)) { // If @Service bean is local one
             /**
              * Get  the @Service's BeanDefinition from {@link BeanFactory}
@@ -179,6 +187,8 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
             // The name of bean annotated @Service
             String serviceBeanName = runtimeBeanReference.getBeanName();
             // register Alias rather than a new bean name, in order to reduce duplicated beans
+            // 如果是本地提供的一个服务，那么就@Reference(parameters=[Ljava.lang.String;@72ef8d15) org.apache.dubbo.demo.DemoService
+            // 的别名是demoService，不需要是ServiceBean的名字
             beanFactory.registerAlias(serviceBeanName, beanName);
         } else { // Remote @Service Bean
             if (!beanFactory.containsBean(beanName)) {
@@ -199,6 +209,8 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
     private String getReferenceBeanName(AnnotationAttributes attributes, Class<?> interfaceClass) {
         // id attribute appears since 2.7.3
         String beanName = getAttribute(attributes, "id");
+
+        // beanName为null时会进入if判断
         if (!hasText(beanName)) {
             beanName = generateReferenceBeanName(attributes, interfaceClass);
         }
@@ -327,10 +339,13 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
         ReferenceBean<?> referenceBean = referenceBeanCache.get(referenceBeanName);
 
         if (referenceBean == null) {
+
+            // 生成了一个ReferenceBean对象
             ReferenceBeanBuilder beanBuilder = ReferenceBeanBuilder
                     .create(attributes, applicationContext)
                     .interfaceClass(referencedType);
             referenceBean = beanBuilder.build();
+
             referenceBeanCache.put(referenceBeanName, referenceBean);
         } else if (!referencedType.isAssignableFrom(referenceBean.getInterfaceClass())) {
             throw new IllegalArgumentException("reference bean name " + referenceBeanName + " has been duplicated, but interfaceClass " +

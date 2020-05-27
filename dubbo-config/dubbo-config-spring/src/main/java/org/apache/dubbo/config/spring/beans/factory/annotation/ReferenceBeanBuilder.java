@@ -104,8 +104,14 @@ class ReferenceBeanBuilder extends AnnotatedInterfaceConfigBeanBuilder<Reference
         Assert.notNull(interfaceClass, "The interface class must set first!");
         DataBinder dataBinder = new DataBinder(referenceBean);
         // Register CustomEditors for special fields
+
+        // 去掉空格
         dataBinder.registerCustomEditor(String.class, "filter", new StringTrimmerEditor(true));
         dataBinder.registerCustomEditor(String.class, "listener", new StringTrimmerEditor(true));
+
+        // 你可以这么配@Reference(parameters = {"text=123"})
+        // 也可以这么配@Reference(parameters = {"text:123"})
+        // 最终都会转变为Map设置到referenceBean中的parameters
         dataBinder.registerCustomEditor(Map.class, "parameters", new PropertyEditorSupport() {
             @Override
             public void setAsText(String text) throws java.lang.IllegalArgumentException {

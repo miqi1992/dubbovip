@@ -76,8 +76,10 @@ public abstract class AnnotatedInterfaceConfigBeanBuilder<C extends AbstractInte
 
         checkDependencies();
 
+        // 创建一个ReferenceBean对象
         C configBean = doBuild();
 
+        // 给ReferenceBean对象的属性赋值
         configureBean(configBean);
 
         if (logger.isInfoEnabled()) {
@@ -102,7 +104,9 @@ public abstract class AnnotatedInterfaceConfigBeanBuilder<C extends AbstractInte
 
     protected void configureBean(C configBean) throws Exception {
 
+        // 把@Reference注解中的配置项赋值给configBean
         preConfigureBean(attributes, configBean);
+
 
         configureRegistryConfigs(configBean);
 
@@ -112,6 +116,7 @@ public abstract class AnnotatedInterfaceConfigBeanBuilder<C extends AbstractInte
 
         configureModuleConfig(configBean);
 
+        // 设置applicationContext、interfaceName、consumer、methods属性，并调用ReferenceBean对象的afterPropertiesSet方法
         postConfigureBean(attributes, configBean);
 
     }
@@ -121,10 +126,13 @@ public abstract class AnnotatedInterfaceConfigBeanBuilder<C extends AbstractInte
 
     private void configureRegistryConfigs(C configBean) {
 
+        // 解析@Refrence注解中配置的registry属性
         String[] registryConfigBeanIds = resolveRegistryConfigBeanNames(attributes);
 
+        // 获得注册中心对应的RegistryConfig对象
         List<RegistryConfig> registryConfigs = getBeans(applicationContext, registryConfigBeanIds, RegistryConfig.class);
 
+        // 设置
         configBean.setRegistries(registryConfigs);
 
     }

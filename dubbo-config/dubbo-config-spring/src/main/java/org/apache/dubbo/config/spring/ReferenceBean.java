@@ -68,7 +68,6 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         SpringExtensionFactory.addApplicationContext(applicationContext);
     }
 
-    // FactoryBean中的方法
     @Override
     public Object getObject() {
         return get();
@@ -88,14 +87,21 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
     @Override
     @SuppressWarnings({"unchecked"})
     public void afterPropertiesSet() throws Exception {
+        // 这个方法还是在给ReferenceBean对象的属性赋值
+
         if (applicationContext != null) {
             BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ConfigCenterBean.class, false, false);
         }
 
+        // 如果@Reference注解中没有配置consumer参数
         if (getConsumer() == null) {
+            // 那么则从Spring容器中寻找ConsumerConfig类型的Bean, 比如通过@Bean定义了一个ConsumerConfig的Bean
             Map<String, ConsumerConfig> consumerConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ConsumerConfig.class, false, false);
+
             if (consumerConfigMap != null && consumerConfigMap.size() > 0) {
                 ConsumerConfig consumerConfig = null;
+
+                // 可能存在多个ConsumerConfig类型的Bean，遍历这些Bean，取第一个没有配置default或者default为true的Bean作为consumer的值
                 for (ConsumerConfig config : consumerConfigMap.values()) {
                     if (config.isDefault() == null || config.isDefault()) {
                         if (consumerConfig != null) {
@@ -109,6 +115,8 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
                 }
             }
         }
+
+
         if (getApplication() == null
                 && (getConsumer() == null || getConsumer().getApplication() == null)) {
             Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
@@ -144,6 +152,8 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             }
         }
 
+        // 如果@Reference注解上没有配置registryIds
+        // 那么则看application或consumer上有没有配置registryIds
         if (StringUtils.isEmpty(getRegistryIds())) {
             if (getApplication() != null && StringUtils.isNotEmpty(getApplication().getRegistryIds())) {
                 setRegistryIds(getApplication().getRegistryIds());
@@ -151,6 +161,7 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             if (getConsumer() != null && StringUtils.isNotEmpty(getConsumer().getRegistryIds())) {
                 setRegistryIds(getConsumer().getRegistryIds());
             }
+
         }
 
         if (CollectionUtils.isEmpty(getRegistries())
@@ -190,9 +201,14 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             }
         }
 
+        // 如果@Reference注解中没有配置configCenter属性
+        // 那么则从Spring容器中找ConfigCenterConfig类型的bean
         if (getConfigCenter() == null) {
             Map<String, ConfigCenterConfig> configenterMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ConfigCenterConfig.class, false, false);
+
+            // 只能配一个ConfigCenterConfig
             if (configenterMap != null && configenterMap.size() == 1) {
+                // 设置进去
                 super.setConfigCenter(configenterMap.values().iterator().next());
             } else if (configenterMap != null && configenterMap.size() > 1) {
                 throw new IllegalStateException("Multiple ConfigCenter found:" + configenterMap);

@@ -66,6 +66,9 @@ public class DubboComponentScanRegistrar implements ImportBeanDefinitionRegistra
         registerServiceAnnotationBeanPostProcessor(packagesToScan, registry);
 
         // 注册ReferenceAnnotationBeanPostProcessor
+        // 实现了AnnotationInjectedBeanPostProcessor接口，继而实现了InstantiationAwareBeanPostProcessorAdapter接口
+        // 所以Spring在启动时，在对属性进行注入时会调用AnnotationInjectedBeanPostProcessor接口中的postProcessPropertyValues方法
+        // 在这个过程中会按照@Refrence注解的信息去生成一个RefrenceBean对象
         registerReferenceAnnotationBeanPostProcessor(registry);
 
     }

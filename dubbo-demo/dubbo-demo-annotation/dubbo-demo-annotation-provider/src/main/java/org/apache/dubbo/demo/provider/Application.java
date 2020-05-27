@@ -33,9 +33,9 @@ public class Application {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ProviderConfiguration.class);
         context.start();
 
-//        for (String beanDefinitionName : context.getBeanDefinitionNames()) {
-//            System.out.println(beanDefinitionName);
-//        }
+        for (String beanDefinitionName : context.getBeanDefinitionNames()) {
+            System.out.println(beanDefinitionName);
+        }
 
         System.in.read();
     }

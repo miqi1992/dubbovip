@@ -530,7 +530,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     }
 
     private void completeCompoundConfigs() {
-        // 和Provider类似，拿consumer、module、application中配置的属性去填充ReferenceConfig
+        // 和Provider类似，拿consumer、module、application中配置的属性去填充ReferenceConfig的相同的属性
         if (consumer != null) {
             if (application == null) {
                 setApplication(consumer.getApplication());

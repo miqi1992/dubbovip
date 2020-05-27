@@ -624,7 +624,8 @@ public abstract class AbstractConfig implements Serializable {
         this.prefix = prefix;
     }
 
-    // 刷新某个Config
+    // 刷新XxConfig
+    //
     // 以ServiceConfig为例，ServiceConfig中包括很多属性，比如timeout
     // 但是在定义一个Service时，如果在注解上没有配置timeout，那么就会其他地方获取timeout的配置
     // 比如可以从系统变量->配置中心应用配置->配置中心全局配置->注解或xml中定义->dubbo.properties文件
@@ -632,7 +633,10 @@ public abstract class AbstractConfig implements Serializable {
     public void refresh() {
         try {
             CompositeConfiguration compositeConfiguration = Environment.getInstance().getConfiguration(getPrefix(), getId());
+
+            // 表示XxConfig对象本身
             Configuration config = new ConfigConfigurationAdapter(this);
+
             if (Environment.getInstance().isConfigCenterFirst()) {
                 // The sequence would be: SystemConfiguration -> AppExternalConfiguration -> ExternalConfiguration -> AbstractConfig -> PropertiesConfiguration
                 compositeConfiguration.addConfiguration(4, config);
