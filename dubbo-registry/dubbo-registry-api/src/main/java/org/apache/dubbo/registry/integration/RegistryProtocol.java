@@ -147,6 +147,7 @@ public class RegistryProtocol implements Protocol {
     //Filter the parameters that do not need to be output in url(Starting with .)
     private static String[] getFilteredKeys(URL url) {
         Map<String, String> params = url.getParameters();
+
         // 过滤url的参数，找到startsWith(HIDE_KEY_PREFIX)的key
         if (CollectionUtils.isNotEmptyMap(params)) {
             return params.keySet().stream()
@@ -249,7 +250,6 @@ public class RegistryProtocol implements Protocol {
         boolean register = providerUrl.getParameter(REGISTER_KEY, true);
         if (register) {
             // 注册服务，把简化后的服务提供者url注册到registryUrl中去
-
             register(registryUrl, registeredProviderUrl);
             providerInvokerWrapper.setReg(true);
         }
