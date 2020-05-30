@@ -44,6 +44,8 @@ public class HeaderExchanger implements Exchanger {
     public ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException {
 
         // 下面会去启动Netty
+        // 对handler包装了两层，表示当处理一个请求时，每层Handler负责不同的处理逻辑
+        // DecodeHandler 负责解码，
         return new HeaderExchangeServer(Transporters.bind(url, new DecodeHandler(new HeaderExchangeHandler(handler))));
     }
 

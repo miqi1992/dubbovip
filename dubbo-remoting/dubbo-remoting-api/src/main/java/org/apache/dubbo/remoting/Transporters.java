@@ -56,7 +56,7 @@ public class Transporters {
             handler = new ChannelHandlerDispatcher(handlers);
         }
 
-        // 调用NettyTransporter去绑定
+        // 调用NettyTransporter去绑定，Transporter表示网络传输层
         return getTransporter().bind(url, handler);
     }
 

@@ -37,9 +37,9 @@ public class Application {
         context.start();
         DemoService service = context.getBean("demoServiceComponent", DemoServiceComponent.class);
 
-        for (String beanDefinitionName : context.getBeanDefinitionNames()) {
-            System.out.println(beanDefinitionName);
-        }
+//        for (String beanDefinitionName : context.getBeanDefinitionNames()) {
+//            System.out.println(beanDefinitionName);
+//        }
 
         System.out.println("开始调用");
         String hello = service.sayHello("world");

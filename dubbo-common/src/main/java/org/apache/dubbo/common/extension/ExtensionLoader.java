@@ -194,6 +194,7 @@ public class ExtensionLoader<T> {
     public List<T> getActivateExtension(URL url, String key, String group) {
         // 根据key从url中得到值
         String value = url.getParameter(key);
+        // value就是filter的别名，可以有多个
         return getActivateExtension(url, StringUtils.isEmpty(value) ? null : COMMA_SPLIT_PATTERN.split(value), group);
     }
 
@@ -209,6 +210,8 @@ public class ExtensionLoader<T> {
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<>();
         List<String> names = values == null ? new ArrayList<>(0) : Arrays.asList(values);
+
+        // 想要获取的filter的名字不包括"-default"
         if (!names.contains(REMOVE_VALUE_PREFIX + DEFAULT_KEY)) {
             getExtensionClasses();
             // 缓存了被Activate注解标记了的类（已经被加载进来了的前提下），表示这个扩展点在什么时候能用
@@ -229,12 +232,13 @@ public class ExtensionLoader<T> {
                     continue;
                 }
 
-                // 遍历所有的Active扩展点，查看group是否匹配，当前url中是否存在当前Active中所指定的value的key，存在则匹配
-                // 这里利用了url和group两个参数
+                // group表示想要获取的Filter所在的分组，activateGroup表示当前遍历的Filter所在的分组，看是否匹配
+                // names表示想要获取的Filter的名字，name表示当前遍历的Filter的名字
+                // 如果当前遍历的Filter的名字不在想要获取的Filter的names内，并且names中也没有要排除它，则根据url看能否激活
                 if (isMatchGroup(group, activateGroup)
                         && !names.contains(name)
                         && !names.contains(REMOVE_VALUE_PREFIX + name)
-                        // url的参数中是否存在key的值为activateValue，并且key所对应的value不为空
+                        // 查看url的参数中是否存在key为activateValue，并且对应的value不为空
                         && isActive(activateValue, url)) {
                     exts.add(getExtension(name));
                 }
@@ -242,7 +246,6 @@ public class ExtensionLoader<T> {
             exts.sort(ActivateComparator.COMPARATOR);
         }
 
-        // 下面根据names来加载扩展点，names就是values参数
         // 直接根据names来获取扩展点
         List<T> usrs = new ArrayList<>();
         for (int i = 0; i < names.size(); i++) {

@@ -78,9 +78,10 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
     }
 
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
+        // 请求id，请求版本
         Response res = new Response(req.getId(), req.getVersion());
-        // 检测请求是否合法，不合法则返回状态码为 BAD_REQUEST 的响应
         if (req.isBroken()) {
+            // 请求处理失败
             Object data = req.getData();
 
             String msg;
@@ -100,13 +101,13 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
             return;
         }
 
-        // 获取 data 字段值，也就是 RpcInvocation 对象
+        // 获取 data 字段值，也就是 RpcInvocation 对象，表示请求内容
         // find handler by message class.
         Object msg = req.getData();
         try {
             // 继续向下调用
             CompletionStage<Object> future = handler.reply(channel, msg);
-            // 同步转异步
+            // 单下层handler处理完了之后，则发送响应结果
             future.whenComplete((appResult, t) -> {
                 try {
                     if (t == null) {

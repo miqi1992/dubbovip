@@ -290,6 +290,7 @@ public class DubboProtocol extends AbstractProtocol {
 
         // export service.
         String key = serviceKey(url);
+        // 构造一个Exporter
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
         exporterMap.put(key, exporter);
 
@@ -310,7 +311,7 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
-        //
+        // 开启NettyServer
         openServer(url);
 
         optimizeSerialization(url);
@@ -320,12 +321,14 @@ public class DubboProtocol extends AbstractProtocol {
 
     private void openServer(URL url) {
         // find server.
-        String key = url.getAddress();
+        String key = url.getAddress(); // 获得ip地址和port， 192.168.40.17:20880
 
         // NettyClient, NettyServer
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(IS_SERVER_KEY, true);
         if (isServer) {
+
+            // 缓存Server对象
 
             ExchangeServer server = serverMap.get(key);
 
@@ -361,9 +364,11 @@ public class DubboProtocol extends AbstractProtocol {
             throw new RpcException("Unsupported server type: " + str + ", url: " + url);
         }
 
+        // 通过url绑定端口，和对应的请求处理器
         ExchangeServer server;
         try {
             // requestHandler是请求处理器，类型为ExchangeHandler
+            // 表示从url的端口接收到请求后，requestHandler来进行处理
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
