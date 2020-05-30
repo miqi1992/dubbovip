@@ -167,7 +167,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 // 单独订阅某一个服务
 
                 List<URL> urls = new ArrayList<>();
-                // 得到真正要监听的zk上的路径
+                // 得到真正要监听的zk上的路径,
                 for (String path : toCategoriesPath(url)) {
                     // 根据监听地址去拿listeners，如果没有则生成
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);

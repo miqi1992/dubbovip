@@ -314,8 +314,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         // 并刷新所有的Config属性
         startConfigCenter();
 
-        // 调用的createProviderIfAbsent，检查Provider是否存在，如果不存在就取ConfigManager中默认的Provider
-        // ConfigManager中包含了所有了的Config
+        // 如果没有ProviderConfig对象，则创建一个
         checkDefault();
 
         // 如果没有单独的配置protocols，那么就从provider获取配置的协议，添加到的ServiceConfig中去
@@ -713,23 +712,24 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         }
 
                         // For providers, this is used to enable custom proxy to generate invoker
-                        //
                         String proxy = url.getParameter(PROXY_KEY);
                         if (StringUtils.isNotEmpty(proxy)) {
                             registryURL = registryURL.addParameter(PROXY_KEY, proxy);
                         }
 
+                        // 生成一个当前服务接口的代理对象
                         // 使用代理生成一个Invoker，Invoker表示服务提供者的代理，可以使用Invoker的invoke方法执行服务
-                        // 当实际情况是，当前Invoker表示的是服务注册的Invoker，对应的url为 registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-annotation-provider&dubbo=2.0.2&export=http%3A%2F%2F192.168.40.17%3A80%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-annotation-provider%26bean.name%3DServiceBean%3Aorg.apache.dubbo.demo.DemoService%26bind.ip%3D192.168.40.17%26bind.port%3D80%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D19472%26release%3D%26side%3Dprovider%26timestamp%3D1585207994860&pid=19472&registry=zookeeper&timestamp=1585207994828
+                        // 对应的url为 registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-annotation-provider&dubbo=2.0.2&export=http%3A%2F%2F192.168.40.17%3A80%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-annotation-provider%26bean.name%3DServiceBean%3Aorg.apache.dubbo.demo.DemoService%26bind.ip%3D192.168.40.17%26bind.port%3D80%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D19472%26release%3D%26side%3Dprovider%26timestamp%3D1585207994860&pid=19472&registry=zookeeper&timestamp=1585207994828
+                        // 这个Invoker中包括了服务的实现者、服务接口类、服务的注册地址
                         Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
 
                         // DelegateProviderMetaDataInvoker也表示服务提供者，包括了Invoker和服务的配置
-                        // DelegateProviderMetaDataInvoker可以理解为一个完整的服务提供者
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
-                        // 使用特定的协议进行导出，这里的协议为RegistryProtocol，导出成功后得到一个Exporter
+                        // 使用特定的协议来对服务进行导出，这里的协议为RegistryProtocol，导出成功后得到一个Exporter
+                        // 1. 先使用RegistryProtocol进行服务注册
+                        // 2. 注册完了之后，使用DubboProtocol进行导出
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
-                        System.out.println("protocol====="+protocol.getClass());
                         exporters.add(exporter);
                     }
                 } else {
@@ -1017,8 +1017,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     private void convertProtocolIdsToProtocols() {
+        //
+
         if (StringUtils.isEmpty(protocolIds) && CollectionUtils.isEmpty(protocols)) {
             List<String> configedProtocols = new ArrayList<>();
+
             // 从配置中心的全局配置获取dubbo.protocols.的配置项值
             configedProtocols.addAll(getSubProperties(Environment.getInstance()
                     .getExternalConfigurationMap(), PROTOCOLS_SUFFIX));

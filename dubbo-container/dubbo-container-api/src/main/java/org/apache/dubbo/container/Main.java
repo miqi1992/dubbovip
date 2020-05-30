@@ -58,6 +58,7 @@ public class Main {
                 args = COMMA_SPLIT_PATTERN.split(config);
             }
 
+            // 加载指定的容器
             final List<Container> containers = new ArrayList<Container>();
             for (int i = 0; i < args.length; i++) {
                 containers.add(loader.getExtension(args[i]));

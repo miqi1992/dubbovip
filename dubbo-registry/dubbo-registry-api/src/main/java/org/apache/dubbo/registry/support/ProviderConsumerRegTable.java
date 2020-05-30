@@ -76,6 +76,7 @@ public class ProviderConsumerRegTable {
     }
 
     public static <T> ProviderInvokerWrapper<T> getProviderWrapper(URL registeredProviderUrl, Invoker<T> invoker) {
+
         String serviceUniqueName = registeredProviderUrl.getServiceKey();
         ConcurrentMap<Invoker, ProviderInvokerWrapper> invokers = providerInvokers.get(serviceUniqueName);
         if (invokers == null) {

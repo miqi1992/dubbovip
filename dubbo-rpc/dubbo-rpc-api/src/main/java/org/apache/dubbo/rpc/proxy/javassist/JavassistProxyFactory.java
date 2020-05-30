@@ -38,8 +38,8 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
     @Override
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
 
-        // 针对被代理的对象生成Wrapper
         // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
+        // 如果现在被代理的对象proxy本身就是一个已经被代理过的对象，那么则取代理类的Wrapper，否则取type
         final Wrapper wrapper = Wrapper.getWrapper(proxy.getClass().getName().indexOf('$') < 0 ? proxy.getClass() : type);
 
         return new AbstractProxyInvoker<T>(proxy, type, url) {
@@ -50,6 +50,7 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
 
                 // 执行proxy的method方法
                 // 为什么要用wrapper，因为方便，这里不是代理接口，是直接基于某个对象proxy，进行代理
+                // 执行的proxy实例的方法
                 return wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
             }
         };

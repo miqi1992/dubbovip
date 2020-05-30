@@ -156,6 +156,8 @@ public abstract class AbstractConfig implements Serializable {
 
     @SuppressWarnings("unchecked")
     protected static void appendParameters(Map<String, String> parameters, Object config, String prefix) {
+        // 把XxConfig中的属性添加到parameters中
+
         if (config == null) {
             return;
         }
@@ -217,7 +219,7 @@ public abstract class AbstractConfig implements Serializable {
                         }
                         // 前缀+key
                         // 为什么要有前缀？因为在服务导出时，会存在很多的配置项与值，这些配置项都会存入到map中，防止key冲突
-                        // 比如可以针对对个方法进行配置，此时前缀就是方法名
+                        // 比如可以针对单个方法进行配置，此时前缀就是方法名
                         if (prefix != null && prefix.length() > 0) {
                             key = prefix + "." + key;
                         }
@@ -625,7 +627,9 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     // 刷新XxConfig
-    //
+    // 一个XxConfig对象的属性可能是有值的，也可能是没有值的，这时需要从其他位置获取属性值,来进行属性的覆盖
+    // 覆盖的优先级，从大到小为系统变量->配置中心应用配置->配置中心全局配置->注解或xml中定义->dubbo.properties文件
+
     // 以ServiceConfig为例，ServiceConfig中包括很多属性，比如timeout
     // 但是在定义一个Service时，如果在注解上没有配置timeout，那么就会其他地方获取timeout的配置
     // 比如可以从系统变量->配置中心应用配置->配置中心全局配置->注解或xml中定义->dubbo.properties文件
@@ -634,7 +638,7 @@ public abstract class AbstractConfig implements Serializable {
         try {
             CompositeConfiguration compositeConfiguration = Environment.getInstance().getConfiguration(getPrefix(), getId());
 
-            // 表示XxConfig对象本身
+            // 表示XxConfig对象本身- AbstractConfig
             Configuration config = new ConfigConfigurationAdapter(this);
 
             if (Environment.getInstance().isConfigCenterFirst()) {

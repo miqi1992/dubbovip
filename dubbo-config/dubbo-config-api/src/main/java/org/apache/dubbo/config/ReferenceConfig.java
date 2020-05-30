@@ -222,6 +222,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         startConfigCenter();
         // get consumer's global configuration
         checkDefault();
+        // 刷新ReferenceConfig对象的属性值
         this.refresh();
 
         // 设置泛化
@@ -522,6 +523,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (consumer != null) {
             return;
         }
+        // 如果如果没有配置Consumer，则在这里生产一个ConsumerConfig对象，并刷新属性值
         setConsumer(ConfigManager.getInstance().getDefaultConsumer().orElseGet(() -> {
             ConsumerConfig consumerConfig = new ConsumerConfig();
             consumerConfig.refresh();

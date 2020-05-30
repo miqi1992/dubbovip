@@ -278,7 +278,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         // 如果配置了ConfigCenter
         if (this.configCenter != null) {
 
-            // ConfigCenterConfig有很多属性，所以需要refresh属性（配置）
+            // 从其他位置获取配置中心的相关属性信息，比如配置中心地址
             // TODO there may have duplicate refresh
             this.configCenter.refresh();
 
@@ -286,7 +286,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             prepareEnvironment();
         }
 
-        // 从配置中心取到配置数据后，刷新所有的Config
+        // 从配置中心取到配置数据后，刷新所有的XxConfig中的属性
         ConfigManager.getInstance().refreshAll();
     }
 
@@ -295,12 +295,18 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             if (!configCenter.checkOrUpdateInited()) {
                 return;
             }
+
+            // 动态配置中心，管理台上的配置中心
             DynamicConfiguration dynamicConfiguration = getDynamicConfiguration(configCenter.toUrl());
+
+            // 如果是zookeeper，获取的就是/dubbo/config/dubbo/dubbo.properties节点中的内容
             String configContent = dynamicConfiguration.getProperties(configCenter.getConfigFile(), configCenter.getGroup());
 
             String appGroup = application != null ? application.getName() : null;
             String appConfigContent = null;
             if (StringUtils.isNotEmpty(appGroup)) {
+                // 获取的就是/dubbo/config/dubbo-demo-consumer-application/dubbo.properties节点中的内容
+                // 这里有bug
                 appConfigContent = dynamicConfiguration.getProperties
                         (StringUtils.isNotEmpty(configCenter.getAppConfigFile()) ? configCenter.getAppConfigFile() : configCenter.getConfigFile(),
                          appGroup
