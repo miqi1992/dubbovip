@@ -337,12 +337,13 @@ public class DubboProtocol extends AbstractProtocol {
                 synchronized (this) {
                     server = serverMap.get(key);
                     if (server == null) {
-                        // 创建Server
+                        // 创建Server，并进行缓存
                         serverMap.put(key, createServer(url));
                     }
                 }
             } else {
                 // server supports reset, use together with override
+                // 服务重新导出时，就会走这里
                 server.reset(url);
             }
         }
@@ -429,7 +430,8 @@ public class DubboProtocol extends AbstractProtocol {
         optimizeSerialization(url);
 
         // create rpc invoker.
-        // clients很重要
+        // clients很重要，为什么一个DubboInvoker会有多个clients，为了提高效率，因为每个client和server之间都会有一个socket
+        // 在DubboInvoker发送请求时会轮询clients去发送数据
         DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
         invokers.add(invoker);
 
@@ -441,13 +443,13 @@ public class DubboProtocol extends AbstractProtocol {
 
         boolean useShareConnect = false;
 
-        // connections表示对每个提供者的最大连接数，rmi、http、hessian等短连接协议表示限制连接数，
-        // dubbo等长连接协表示建立的长连接个数
+        // connections表示建立几个socket连接，在DubboProtocol中，每构造一个Client就会去和Server建立一个Socket连接
         int connections = url.getParameter(CONNECTIONS_KEY, 0);
 
         List<ReferenceCountExchangeClient> shareClients = null;
 
-        // 如果url上没有配置connections，那么所有就看shareconnections
+        // 如果connections为0，那肯定不能不建议1一个Socket，这时会去获取shareconnections参数，默认为1
+        // 表示消费端至少建立
         // if not configured, connection is shared, otherwise, one connection for one service
         if (connections == 0) {
             useShareConnect = true;
@@ -485,14 +487,14 @@ public class DubboProtocol extends AbstractProtocol {
      */
     private List<ReferenceCountExchangeClient> getSharedClient(URL url, int connectNum) {
         // 这个方法返回的是可以共享的client，要么已经生成过了，要么需要重新生成
-        // 对于已经生成过的client,都会存在referenceClientMap中
+        // 对于已经生成过的client,都会存在referenceClientMap中，key为所调用的服务IP+PORT
 
         String key = url.getAddress();
         List<ReferenceCountExchangeClient> clients = referenceClientMap.get(key);
 
-        // 检查现在的客户端是否都可用，都可用则直接返回
+        // 根据当前引入的服务对应的ip+port，看看是否已经存在clients了，
         if (checkClientCanUse(clients)) {
-            // 如果可用每个客户端的引用次数加1
+            // 如果每个client都可用，那就对每个client的计数+1，表示这些client被引用了多少次
             batchClientRefIncr(clients);
             return clients;
         }

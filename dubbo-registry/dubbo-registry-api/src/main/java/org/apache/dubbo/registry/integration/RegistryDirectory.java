@@ -222,13 +222,15 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                     return "";
                 }));
 
+        // 获取动态配置URL，生成configurators
         List<URL> configuratorURLs = categoryUrls.getOrDefault(CONFIGURATORS_CATEGORY, Collections.emptyList());
         this.configurators = Configurator.toConfigurators(configuratorURLs).orElse(this.configurators);
 
+        // 获取老版本路由URL，生成Router，并添加到路由链中
         List<URL> routerURLs = categoryUrls.getOrDefault(ROUTERS_CATEGORY, Collections.emptyList());
         toRouters(routerURLs).ifPresent(this::addRouters);
 
-        // providers
+        // 获取服务提供者URL，
         List<URL> providerURLs = categoryUrls.getOrDefault(PROVIDERS_CATEGORY, Collections.emptyList());
         refreshOverrideAndInvoker(providerURLs);
     }
@@ -277,6 +279,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             if (invokerUrls.isEmpty()) {
                 return;
             }
+            // 这里会先按Protocol进行过滤，并且调用DubboProtocol.refer方法得到Invoker
             Map<String, Invoker<T>> newUrlInvokerMap = toInvokers(invokerUrls);// Translate url list to Invoker map
 
             /**
@@ -376,11 +379,15 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         Set<String> keys = new HashSet<>();
         String queryProtocols = this.queryMap.get(PROTOCOL_KEY);
+
+        // 遍历当前服务所有的服务提供者URL
         for (URL providerUrl : urls) {
             // If protocol is configured at the reference side, only the matching protocol is selected
             if (queryProtocols != null && queryProtocols.length() > 0) {
                 boolean accept = false;
                 String[] acceptProtocols = queryProtocols.split(",");
+
+                // 当前消费者如果手动配置了Protocol，那么则进行匹配
                 for (String acceptProtocol : acceptProtocols) {
                     if (providerUrl.getProtocol().equals(acceptProtocol)) {
                         accept = true;
@@ -394,6 +401,8 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             if (EMPTY_PROTOCOL.equals(providerUrl.getProtocol())) {
                 continue;
             }
+
+            // 当前Protocol是否在应用中存在对应的扩展点
             if (!ExtensionLoader.getExtensionLoader(Protocol.class).hasExtension(providerUrl.getProtocol())) {
                 logger.error(new IllegalStateException("Unsupported protocol " + providerUrl.getProtocol() +
                         " in notified url: " + providerUrl + " from registry " + getUrl().getAddress() +
@@ -401,6 +410,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                         ExtensionLoader.getExtensionLoader(Protocol.class).getSupportedExtensions()));
                 continue;
             }
+
             URL url = mergeUrl(providerUrl);
 
             String key = url.toFullString(); // The parameter urls are sorted
@@ -411,6 +421,8 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             // Cache key is url that does not merge with consumer side parameters, regardless of how the consumer combines parameters, if the server url changes, then refer again
             Map<String, Invoker<T>> localUrlInvokerMap = this.urlInvokerMap; // local reference
             Invoker<T> invoker = localUrlInvokerMap == null ? null : localUrlInvokerMap.get(key);
+
+            // 如果当前服务提供者URL没有生产过Invoker
             if (invoker == null) { // Not in the cache, refer again
                 try {
                     boolean enabled = true;
@@ -420,6 +432,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                         enabled = url.getParameter(ENABLED_KEY, true);
                     }
                     if (enabled) {
+                        // 调用Protocol的refer方法得到一个Invoker
                         invoker = new InvokerDelegate<>(protocol.refer(serviceType, url), url, providerUrl);
                     }
                 } catch (Throwable t) {

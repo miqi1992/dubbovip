@@ -18,6 +18,7 @@
  */
 package org.apache.dubbo.demo.provider;
 
+import org.apache.dubbo.config.annotation.Method;
 import org.apache.dubbo.config.annotation.Service;
 import org.apache.dubbo.demo.DemoService;
 import org.apache.dubbo.rpc.RpcContext;
@@ -28,19 +29,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.concurrent.TimeUnit;
 
-@Service(timeout = 3000)
+@Service( register = true, group = "g1", version = "1.1.1", timeout = 3000, methods = {@Method(name = "sayHello", loadbalance="random")})
 public class DemoServiceImpl implements DemoService {
     private static final Logger logger = LoggerFactory.getLogger(DemoServiceImpl.class);
 
     @Override
     public String sayHello(String name) {
         logger.info("Hello " + name + ", request from consumer: " + RpcContext.getContext().getRemoteAddress());
-
-        try {
-            TimeUnit.SECONDS.sleep(30);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         return "Hello " + name + ", response from provider: " + RpcContext.getContext().getLocalAddress();
     }

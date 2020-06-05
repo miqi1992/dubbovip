@@ -192,6 +192,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
                         urls.addAll(toUrlsWithEmpty(url, path, children));
                     }
                 }
+                // 这里的urls就是从现在所引入的服务的目录下查到的url，比如下面这个三个目录下的路径
+//                "/dubbo/org.apache.dubbo.demo.DemoService/providers"
+//                "/dubbo/org.apache.dubbo.demo.DemoService/configurators"
+//                "/dubbo/org.apache.dubbo.demo.DemoService/routers"
                 notify(url, listener, urls);
             }
         } catch (Throwable e) {

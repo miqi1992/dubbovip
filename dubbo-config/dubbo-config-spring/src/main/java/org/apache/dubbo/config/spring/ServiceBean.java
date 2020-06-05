@@ -112,7 +112,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        // 没有被导出并且没有回收（unexport不知道怎么翻译），才导出服务
+        // 当前服务没有被导出并且没有卸载，才导出服务
         if (!isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
                 logger.info("The service ready on spring started. service: " + getInterface());

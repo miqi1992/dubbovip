@@ -36,6 +36,8 @@ import static org.apache.dubbo.config.spring.util.AnnotatedBeanDefinitionRegistr
  */
 public class DubboConfigConfigurationRegistrar implements ImportBeanDefinitionRegistrar {
 
+    //
+
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         System.out.println("执行DubboConfigConfigurationRegistrar");

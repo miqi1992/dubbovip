@@ -103,7 +103,7 @@ public class ExtensionLoader<T> {
         this.type = type;
         // ExtensionFactory表示扩展类实例工厂，可以利用ExtensionFactory得到某个扩展的对象实例
         //                                                         得到ExtensionFactory接口的adaptive实例-AdaptiveExtensionFactory实例，利用AdaptiveExtensionFactory实例来获取某个类型或名字的实例对象
-        objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
+        objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());   // AdaptiveExtensionFactory
     }
 
     private static <T> boolean withExtensionAnnotation(Class<T> type) {
@@ -178,6 +178,7 @@ public class ExtensionLoader<T> {
      * @return extension list which are activated
      * @see #getActivateExtension(org.apache.dubbo.common.URL, String[], String)
      */
+    // 获取name属于values中的Filter + 根据url能激活的Filter（激活规则就是匹配group+url中是否含有Filter的@Activate注解中所指定的value的key）
     public List<T> getActivateExtension(URL url, String[] values) {
         return getActivateExtension(url, values, null);
     }
@@ -355,6 +356,7 @@ public class ExtensionLoader<T> {
         if ("true".equals(name)) {
             return getDefaultExtension();
         }
+
         final Holder<Object> holder = getOrCreateHolder(name);
         Object instance = holder.get();
         if (instance == null) {
@@ -362,7 +364,7 @@ public class ExtensionLoader<T> {
                 instance = holder.get();
                 if (instance == null) {
                     // 创建扩展实例
-                    instance = createExtension(name);
+                    instance = createExtension(name);  // http
                     holder.set(instance);
                 }
             }
@@ -538,7 +540,7 @@ public class ExtensionLoader<T> {
 
     @SuppressWarnings("unchecked")
     private T createExtension(String name) {
-        // 获取扩展类
+        // 获取扩展类  {name: Class}  key-Value    接口的所有实现类
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
             throw findException(name);
@@ -552,14 +554,15 @@ public class ExtensionLoader<T> {
                 EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
+
             // 依赖注入
-            injectExtension(instance);
+            injectExtension(instance); //
 
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (CollectionUtils.isNotEmpty(wrapperClasses)) {
                 for (Class<?> wrapperClass : wrapperClasses) {
                     // 生成一个Wrapper实例（传入了instance）,然后进行依赖注入
-                    instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
+                    instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));  // new YMapper(new XWrapper（市里的）)
                 }
             }
 
@@ -590,6 +593,7 @@ public class ExtensionLoader<T> {
                 if (method.getAnnotation(DisableInject.class) != null) {
                     continue;
                 }
+
                 // set方法中的参数类型
                 Class<?> pt = method.getParameterTypes()[0];
                 if (ReflectUtils.isPrimitives(pt)) {
@@ -599,8 +603,9 @@ public class ExtensionLoader<T> {
                 try {
                     // 得到setXxx中的xxx
                     String property = getSetterProperty(method);
+
                     // 根据参数类型或属性名，从objectFactory中获取到对象，然后调用set方法进行注入
-                    Object object = objectFactory.getExtension(pt, property);
+                    Object object = objectFactory.getExtension(pt, property); // User.class, user
                     if (object != null) {
                         method.invoke(instance, object);
                     }
@@ -660,7 +665,7 @@ public class ExtensionLoader<T> {
             synchronized (cachedClasses) {
                 classes = cachedClasses.get();
                 if (classes == null) {
-                    classes = loadExtensionClasses();
+                    classes = loadExtensionClasses(); // 加载、解析文件 Map
                     cachedClasses.set(classes);
                 }
             }
@@ -912,7 +917,7 @@ public class ExtensionLoader<T> {
 
     private Class<?> getAdaptiveExtensionClass() {
         // 获取当前接口的所有扩展类
-        getExtensionClasses();
+        getExtensionClasses(); //
         // 缓存了@Adaptive注解标记的类
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;

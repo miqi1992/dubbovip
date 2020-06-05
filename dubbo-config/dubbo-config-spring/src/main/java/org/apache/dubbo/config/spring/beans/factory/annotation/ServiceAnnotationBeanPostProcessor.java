@@ -396,7 +396,7 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
         String[] ignoreAttributeNames = of("provider", "monitor", "application", "module", "registry", "protocol",
                 "interface", "interfaceName", "parameters");
 
-        //对ServiceBean的属性进行赋值，value表示值，reference表示应用
+        // 把serviceAnnotation中的参数值赋值给ServiceBean的属性
         propertyValues.addPropertyValues(new AnnotationPropertyValuesAdapter(serviceAnnotation, environment, ignoreAttributeNames));
 
         // References "ref" property to annotated-@Service Bean

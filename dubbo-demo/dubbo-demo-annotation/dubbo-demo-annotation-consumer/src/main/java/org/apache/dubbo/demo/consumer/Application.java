@@ -22,7 +22,6 @@ import org.apache.dubbo.config.ConsumerConfig;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.apache.dubbo.demo.DemoService;
 import org.apache.dubbo.demo.consumer.comp.DemoServiceComponent;
-import org.apache.dubbo.demo.consumer.comp.DemoServiceComponent1;
 import org.springframework.context.annotation.*;
 
 import java.io.IOException;
@@ -37,14 +36,9 @@ public class Application {
         context.start();
         DemoService service = context.getBean("demoServiceComponent", DemoServiceComponent.class);
 
-//        for (String beanDefinitionName : context.getBeanDefinitionNames()) {
-//            System.out.println(beanDefinitionName);
-//        }
-
         System.out.println("开始调用");
         String hello = service.sayHello("world");
         System.out.println("result :" + hello);
-
 
 
         System.in.read();

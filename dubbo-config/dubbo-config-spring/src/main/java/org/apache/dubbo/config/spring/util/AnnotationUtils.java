@@ -337,12 +337,14 @@ public class AnnotationUtils {
             return emptyMap();
         }
 
+        // 得到注解上的参数值
         Map<String, Object> attributes = getAnnotationAttributes(annotation);
 
         Map<String, Object> actualAttributes = new LinkedHashMap<>();
 
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
 
+            // 参数名与参数值
             String attributeName = entry.getKey();
             Object attributeValue = entry.getValue();
 
@@ -353,6 +355,8 @@ public class AnnotationUtils {
             actualAttributes.put(attributeName, attributeValue);
         }
 
+        // 排除在ignoreAttributeNames中的属性，并且进行占位符填充
+        // 最终得到注解中所配置的属性
         return resolvePlaceholders(actualAttributes, propertyResolver, ignoreAttributeNames);
     }
 

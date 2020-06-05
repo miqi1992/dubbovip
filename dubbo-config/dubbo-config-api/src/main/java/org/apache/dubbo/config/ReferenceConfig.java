@@ -257,9 +257,10 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             throw new IllegalStateException("The invoker of ReferenceConfig(" + url + ") has already destroyed!");
         }
         if (ref == null) {
+            // 入口
             init();
         }
-        return ref;
+        return ref;  // Invoke代理
     }
 
     public synchronized void destroy() {

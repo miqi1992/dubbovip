@@ -183,7 +183,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
              * Refer to {@link ServiceAnnotationBeanPostProcessor#buildServiceBeanDefinition}
              */
             AbstractBeanDefinition beanDefinition = (AbstractBeanDefinition) beanFactory.getBeanDefinition(referencedBeanName);
-            RuntimeBeanReference runtimeBeanReference = (RuntimeBeanReference) beanDefinition.getPropertyValues().get("ref");
+            RuntimeBeanReference runtimeBeanReference = (RuntimeBeanReference) beanDefinition.getPropertyValues().get("ref"); // ServiceBean --- ref
             // The name of bean annotated @Service
             String serviceBeanName = runtimeBeanReference.getBeanName();
             // register Alias rather than a new bean name, in order to reduce duplicated beans
@@ -340,7 +340,7 @@ public class ReferenceAnnotationBeanPostProcessor extends AnnotationInjectedBean
 
         if (referenceBean == null) {
 
-            // 生成了一个ReferenceBean对象
+            // 生成了一个ReferenceBean对象，attributes是@Reference注解的参数值
             ReferenceBeanBuilder beanBuilder = ReferenceBeanBuilder
                     .create(attributes, applicationContext)
                     .interfaceClass(referencedType);

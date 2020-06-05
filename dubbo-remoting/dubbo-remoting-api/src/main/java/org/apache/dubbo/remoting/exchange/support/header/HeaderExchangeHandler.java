@@ -79,7 +79,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
         // 请求id，请求版本
-        Response res = new Response(req.getId(), req.getVersion());
+            Response res = new Response(req.getId(), req.getVersion());
         if (req.isBroken()) {
             // 请求处理失败
             Object data = req.getData();

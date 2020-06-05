@@ -28,11 +28,11 @@ import org.springframework.stereotype.Component;
 @Component("demoServiceComponent")
 public class DemoServiceComponent implements DemoService {
 
-    @Reference(timeout = 3000, consumer = "xx")
-    private DemoService demoService;
+    @Reference(group = "g1", version = "1.1.1")
+    private DemoService demoService;   //
 
     @Override
     public String sayHello(String name) {
-        return demoService.sayHello(name);
+        return demoService.sayHello(name);  // Invoker
     }
 }

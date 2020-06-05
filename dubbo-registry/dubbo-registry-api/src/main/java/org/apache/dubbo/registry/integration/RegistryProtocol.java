@@ -158,6 +158,7 @@ public class RegistryProtocol implements Protocol {
         }
     }
 
+    // 依赖注入，注入进来的是Cluster的Adaptive类
     public void setCluster(Cluster cluster) {
         this.cluster = cluster;
     }
@@ -259,7 +260,7 @@ public class RegistryProtocol implements Protocol {
         // 监听overrideSubscribeUrl   provider://192.168.40.17:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-annotation-provider&bean.name=ServiceBean:org.apache.dubbo.demo.DemoService&bind.ip=192.168.40.17&bind.port=20880&category=configurators&check=false&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello&pid=416332&release=&side=provider&timestamp=1585318241955
         // 那么新版本的providerConfigurationListener和serviceConfigurationListener是在什么时候进行订阅的呢？在这两个类构造的时候
         // Deprecated! Subscribe to override rules in 2.6.x or before.
-        // 老版本监听的zk路径是：/dubbo/org.apache.dubbo.demo.DemoService/configurators/override%3A%2F%2F0.0.0.0%2Forg.apache.dubbo.demo.DemoService%3Fcategory%3Dconfigurators%26compatible_config%3Dtrue%26dynamic%3Dfalse%26enabled%3Dtrue%26timeout%3D6000
+        // 老版本监听的zk路径是：/dubbo/org.apache.dubbo.demo.DemoService/configurators/override://0.0.0.0/org.apache.dubbo.demo.DemoService?category=configurators&compatible_config=true&dynamic=false&enabled=true&timeout=6000
         // 监听的是路径的内容，不是节点的内容
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
@@ -287,7 +288,7 @@ public class RegistryProtocol implements Protocol {
         return (ExporterChangeableWrapper<T>) bounds.computeIfAbsent(key, s -> {
             Invoker<?> invokerDelegate = new InvokerDelegate<>(originInvoker, providerUrl);
             // protocol属性的值是哪来的，是在SPI中注入进来的，是一个代理类
-            // 这里实际利用的就是DubboProtocol或HttpProtocol去export
+            // 这里实际利用的就是DubboProtocol或HttpProtocol去export  NettyServer
             // 为什么需要ExporterChangeableWrapper？方便注销已经被导出的服务
             return new ExporterChangeableWrapper<>((Exporter<T>) protocol.export(invokerDelegate), originInvoker);
         });
@@ -456,18 +457,19 @@ public class RegistryProtocol implements Protocol {
             return proxyFactory.getInvoker((T) registry, type, url);
         }
 
-        // qs表示 queryString, 表示url中的参数
+        // qs表示 queryString, 表示url中的参数，表示消费者引入服务所配置的参数
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
 
         // group="a,b" or group="*"
         String group = qs.get(GROUP_KEY);
         if (group != null && group.length() > 0) {
             if ((COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {
-                // group有多个值，利用MergeableCluster去生成Invoker
+                // group有多个值，这里的cluster为MergeableCluster
                 return doRefer(getMergeableCluster(), registry, type, url);
             }
         }
-        // group没有值，或者有特定的组
+
+        // 这里的cluster是cluster的Adaptive对象
         return doRefer(cluster, registry, type, url);
     }
 
@@ -478,12 +480,14 @@ public class RegistryProtocol implements Protocol {
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
         // RegistryDirectory表示动态服务目录，会和注册中心的数据保持同步
         // type表示一个服务对应一个RegistryDirectory，url表示注册中心地址
+        // 在消费端，最核心的就是RegistryDirectory
         RegistryDirectory<T> directory = new RegistryDirectory<T>(type, url);
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
 
 
         // all attributes of REFER_KEY
+        // 引入服务所配置的参数
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
 
         // 订阅url，不要把它理解为订阅地址，可以把这个url理解为订阅地址的信息在这个url中
@@ -492,17 +496,20 @@ public class RegistryProtocol implements Protocol {
             directory.setRegisteredConsumerUrl(getRegisteredConsumerUrl(subscribeUrl, url));
             registry.register(directory.getRegisteredConsumerUrl());
         }
+
         // 构造路由链,路由链会在引入服务时按路由条件进行过滤
         // 路由链是动态服务目录中的一个属性，通过路由链可以过滤某些服务提供者
         directory.buildRouterChain(subscribeUrl);
-        // 动态服务目录订阅其他几个路径
-        // PROVIDERS_CATEGORY: 表示服务提供者目录，当服务提供者发生了变化，那么就要更新directory
-        // CONFIGURATORS_CATEGORY：表示配置配置，当在配置中心修改了消费者的参数时，更新directory
-        // ROUTERS_CATEGORY：
+
+        // 服务目录需要订阅的几个路径
+        // 当前所引入的服务的动态配置目录：/dubbo/config/dubbo/org.apache.dubbo.demo.DemoService:1.1.1:g1.configurators
+        // 当前所引入的服务的提供者目录：/dubbo/org.apache.dubbo.demo.DemoService/providers
+        // 当前所引入的服务的老版本动态配置目录：/dubbo/org.apache.dubbo.demo.DemoService/configurators
+        // 当前所引入的服务的老版本路由器目录：/dubbo/org.apache.dubbo.demo.DemoService/routers
         directory.subscribe(subscribeUrl.addParameter(CATEGORY_KEY,
                 PROVIDERS_CATEGORY + "," + CONFIGURATORS_CATEGORY + "," + ROUTERS_CATEGORY));
 
-        // 使用cluster把服务目录包装成一个invoker
+        // 利用传进来的cluster，join得到invoker
         Invoker invoker = cluster.join(directory);
         ProviderConsumerRegTable.registerConsumer(invoker, url, subscribeUrl, directory);
         return invoker;

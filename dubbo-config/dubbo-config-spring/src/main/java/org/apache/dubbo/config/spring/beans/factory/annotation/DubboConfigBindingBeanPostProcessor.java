@@ -103,7 +103,7 @@ public class DubboConfigBindingBeanPostProcessor implements BeanPostProcessor, A
             // 从properties文件中获取值，并设置到dubboConfig对象中
             bind(prefix, dubboConfig);
 
-            // 设置ubboConfig对象的name属性，设置为beanName
+            // 设置dubboConfig对象的name属性，设置为beanName
             customize(beanName, dubboConfig);
 
         }

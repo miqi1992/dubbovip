@@ -1,10 +1,9 @@
 package com.luban;
 
+import org.apache.dubbo.common.URL;
+
 public class User {
 
-    private String name;
 
-    public String getName() {
-        return name;
-    }
+
 }

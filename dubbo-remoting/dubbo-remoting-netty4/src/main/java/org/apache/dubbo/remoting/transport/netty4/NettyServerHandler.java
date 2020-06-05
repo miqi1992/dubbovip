@@ -100,7 +100,6 @@ public class NettyServerHandler extends ChannelDuplexHandler {
         // 接收到数据
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
         try {
-            //
             handler.received(channel, msg);
         } finally {
 

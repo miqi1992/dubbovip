@@ -96,6 +96,7 @@ public abstract class AbstractServiceConfig extends AbstractInterfaceConfig {
      * The protocol list the service will export with
      */
     protected List<ProtocolConfig> protocols;
+
     protected String protocolIds;
 
     // max allowed execute times

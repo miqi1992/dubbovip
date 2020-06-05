@@ -147,7 +147,7 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
 
         AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
 
-        registry.registerBeanDefinition(beanName, beanDefinition);
+        registry.registerBeanDefinition(beanName, beanDefinition);   // ApplicatinoConfig对象
 
         if (log.isInfoEnabled()) {
             log.info("The dubbo config bean definition [name : " + beanName + ", class : " + configClass.getName() +
@@ -206,6 +206,7 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
         Set<String> beanNames = new LinkedHashSet<String>();
 
         // 比如dubbo.protocols.p1.name=dubbo的propertyName为p1.name
+
         for (String propertyName : properties.keySet()) {
 
             // propertyName为p1.name
