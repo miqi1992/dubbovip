@@ -46,12 +46,12 @@ public class ListenerExporterWrapper<T> implements Exporter<T> {
             RuntimeException exception = null;
             for (ExporterListener listener : listeners) {
                 if (listener != null) {
-                    try {
-                        listener.exported(this);
-                    } catch (RuntimeException t) {
-                        logger.error(t.getMessage(), t);
-                        exception = t;
-                    }
+                        try {
+                            listener.exported(this);
+                        } catch (RuntimeException t) {
+                            logger.error(t.getMessage(), t);
+                            exception = t;
+                        }
                 }
             }
             if (exception != null) {

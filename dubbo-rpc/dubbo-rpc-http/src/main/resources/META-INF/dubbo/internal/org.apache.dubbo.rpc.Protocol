@@ -1,2 +1,1 @@
 http=org.apache.dubbo.rpc.protocol.http.HttpProtocol
-http1=org.apache.dubbo.rpc.protocol.http.HttpProtocol

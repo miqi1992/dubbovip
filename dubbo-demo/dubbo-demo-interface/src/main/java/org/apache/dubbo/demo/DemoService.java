@@ -16,8 +16,8 @@
  */
 package org.apache.dubbo.demo;
 
-public interface DemoService {
+public interface DemoService {  // 服务   UserService    getUserName()  1. mysql,  2. redis
 
-    String sayHello(String name);
+    String sayHello(String name);   //
 
 }

@@ -21,8 +21,9 @@ import org.apache.dubbo.rpc.RpcContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-public class DemoServiceImpl implements DemoService {
+public class DemoServiceImpl implements DemoService {   // 服务
     private static final Logger logger = LoggerFactory.getLogger(DemoServiceImpl.class);
 
     @Override

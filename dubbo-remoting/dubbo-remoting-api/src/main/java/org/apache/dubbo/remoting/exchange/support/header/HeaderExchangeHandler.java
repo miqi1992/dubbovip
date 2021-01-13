@@ -106,11 +106,13 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         Object msg = req.getData();
         try {
             // 继续向下调用
-            CompletionStage<Object> future = handler.reply(channel, msg);
+            CompletionStage<Object> future = handler.reply(channel, msg);   // 异步执行服务
             // 单下层handler处理完了之后，则发送响应结果
             future.whenComplete((appResult, t) -> {
-                try {
+                    try {
                     if (t == null) {
+                        // 如果执行服务时，是服务实现类执行时出现了异常，那么需要把这个异常发送给服务消费者
+                        // 消费者在DecodeHandler中会解析响应数据并设置
                         res.setStatus(Response.OK);
                         res.setResult(appResult);
                     } else {

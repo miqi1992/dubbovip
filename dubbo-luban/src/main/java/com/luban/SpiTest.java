@@ -11,17 +11,15 @@ public class SpiTest {
 
     public static void main(String[] args) {
 
-        // Protocol    扩展点--->实现类的对象
 
-//        ExtensionLoader<Car> extensionLoader = ExtensionLoader.getExtensionLoader(Car.class);
-//
-//
-//        extensionLoader.getExtension("car1");
+        ExtensionLoader<Car> extensionLoader = ExtensionLoader.getExtensionLoader(Car.class);
 
+//        URL url = new URL("http", "localhost", 8080);
+//        url = url.addParameter("person", "person1");
 
-
-
-
+        Car car = extensionLoader.getExtension("car1"); // CarWrapper对象
+//        extensionLoader.getAdaptiveExtension();  // 代理对象
+//        car.test(null);
 
 
 

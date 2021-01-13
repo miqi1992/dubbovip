@@ -55,10 +55,14 @@ public class FutureFilter extends ListenableFilter {
     }
 
     private void fireInvokeCallback(final Invoker<?> invoker, final Invocation invocation) {
+
+        // 当前调用的方法是不是有callback
         final ConsumerMethodModel.AsyncMethodInfo asyncMethodInfo = getAsyncMethodInfo(invoker, invocation);
         if (asyncMethodInfo == null) {
             return;
         }
+
+
         final Method onInvokeMethod = asyncMethodInfo.getOninvokeMethod();
         final Object onInvokeInst = asyncMethodInfo.getOninvokeInstance();
 

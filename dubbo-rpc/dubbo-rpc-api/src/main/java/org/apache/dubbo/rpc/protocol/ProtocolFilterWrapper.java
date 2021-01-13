@@ -160,8 +160,10 @@ public class ProtocolFilterWrapper implements Protocol {
 
         @Override
         public Result invoke(Invocation invocation) throws RpcException {
+            // 执行过滤器链
             Result asyncResult = filterInvoker.invoke(invocation);
 
+            // 过滤器都执行完了之后，回调每个过滤器的onResponse或onError方法
             asyncResult = asyncResult.whenCompleteWithContext((r, t) -> {
                 for (int i = filters.size() - 1; i >= 0; i--) {
                     Filter filter = filters.get(i);

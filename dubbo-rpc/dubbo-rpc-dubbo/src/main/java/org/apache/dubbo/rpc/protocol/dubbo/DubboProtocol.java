@@ -125,7 +125,7 @@ public class DubboProtocol extends AbstractProtocol {
 
             // 转成Invocation对象，要开始用反射执行方法了
             Invocation inv = (Invocation) message;
-            Invoker<?> invoker = getInvoker(channel, inv);
+            Invoker<?> invoker = getInvoker(channel, inv);  // 服
 
             // need to consider backward-compatibility if it's a callback
             if (Boolean.TRUE.toString().equals(inv.getAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
@@ -160,6 +160,7 @@ public class DubboProtocol extends AbstractProtocol {
         @Override
         public void received(Channel channel, Object message) throws RemotingException {
             if (message instanceof Invocation) {
+                // 这是服务端接收到Invocation时的处理逻辑
                 reply((ExchangeChannel) channel, message);
 
             } else {
@@ -440,6 +441,8 @@ public class DubboProtocol extends AbstractProtocol {
 
     private ExchangeClient[] getClients(URL url) {
         // whether to share connection
+        // 获取client    new NettyClient()  socket
+        // DUbboInvoker.invoke 3NettyClient
 
         boolean useShareConnect = false;
 
@@ -645,7 +648,7 @@ public class DubboProtocol extends AbstractProtocol {
                 // client是在refer的时候生成的，这个时候就已经建立好连接了？
                 // 答案是就是会去建立连接，也是能够理解了，只有连接建立好了才有client和server之分
                 // 先建立连接，在调用方法时再基于这个连接去发送数据
-                client = Exchangers.connect(url, requestHandler);
+                client = Exchangers.connect(url, requestHandler);  // connect
             }
 
         } catch (RemotingException e) {

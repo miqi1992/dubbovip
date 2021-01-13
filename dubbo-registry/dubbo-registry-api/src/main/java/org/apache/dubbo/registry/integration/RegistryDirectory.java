@@ -279,7 +279,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
             if (invokerUrls.isEmpty()) {
                 return;
             }
-            // 这里会先按Protocol进行过滤，并且调用DubboProtocol.refer方法得到Invoker
+            // 这里会先按Protocol进行过滤，并且调用DubboProtocol.refer方法得到DubboInvoker
             Map<String, Invoker<T>> newUrlInvokerMap = toInvokers(invokerUrls);// Translate url list to Invoker map
 
             /**

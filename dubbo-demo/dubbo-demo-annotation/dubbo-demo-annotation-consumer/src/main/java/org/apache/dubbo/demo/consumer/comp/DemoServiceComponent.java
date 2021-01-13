@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Component("demoServiceComponent")
 public class DemoServiceComponent implements DemoService {
 
-    @Reference(group = "g1", version = "1.1.1")
+    @Reference
     private DemoService demoService;   //
 
     @Override

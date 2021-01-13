@@ -357,15 +357,19 @@ public class ExtensionLoader<T> {
             return getDefaultExtension();
         }
 
+        // A---car1,  B----car2 ,   C-----car1
+        // concurenthashmap   car1--->扩展点实例对象
+        // concurenthashmap.ocon(car1) ---> 实例对象
+
         final Holder<Object> holder = getOrCreateHolder(name);
         Object instance = holder.get();
         if (instance == null) {
-            synchronized (holder) {
+            synchronized (holder) {   // A
                 instance = holder.get();
                 if (instance == null) {
-                    // 创建扩展实例
-                    instance = createExtension(name);  // http
-                    holder.set(instance);
+                    // 创建扩展点实例对象
+                    instance = createExtension(name);   // 对象
+                    holder.set(instance);   // c
                 }
             }
         }
@@ -555,13 +559,14 @@ public class ExtensionLoader<T> {
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
 
-            // 依赖注入
+            // 依赖注入 IOC
             injectExtension(instance); //
 
+            // AOP
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (CollectionUtils.isNotEmpty(wrapperClasses)) {
                 for (Class<?> wrapperClass : wrapperClasses) {
-                    // 生成一个Wrapper实例（传入了instance）,然后进行依赖注入
+                    // new CarWrapper(instance)---CarWrapper实例
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));  // new YMapper(new XWrapper（市里的）)
                 }
             }
@@ -595,14 +600,14 @@ public class ExtensionLoader<T> {
                 }
 
                 // set方法中的参数类型
-                Class<?> pt = method.getParameterTypes()[0];
+                Class<?> pt = method.getParameterTypes()[0];   // Person接口
                 if (ReflectUtils.isPrimitives(pt)) {
                     continue;
                 }
 
                 try {
                     // 得到setXxx中的xxx
-                    String property = getSetterProperty(method);
+                    String property = getSetterProperty(method);   // person
 
                     // 根据参数类型或属性名，从objectFactory中获取到对象，然后调用set方法进行注入
                     Object object = objectFactory.getExtension(pt, property); // User.class, user

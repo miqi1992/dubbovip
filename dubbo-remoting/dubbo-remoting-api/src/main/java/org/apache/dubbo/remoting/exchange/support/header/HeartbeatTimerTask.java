@@ -40,12 +40,13 @@ public class HeartbeatTimerTask extends AbstractTimerTask {
     @Override
     protected void doTask(Channel channel) {
         try {
+            System.out.println("发送心跳");
             Long lastRead = lastRead(channel);
             Long lastWrite = lastWrite(channel);
             if ((lastRead != null && now() - lastRead > heartbeat)
                     || (lastWrite != null && now() - lastWrite > heartbeat)) {
                 Request req = new Request();
-                req.setVersion(Version.getProtocolVersion());
+                req.setVersion(Version.getProtocolVersion());  // ping,pong
                 req.setTwoWay(true);
                 req.setEvent(Request.HEARTBEAT_EVENT);
                 channel.send(req);

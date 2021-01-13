@@ -52,6 +52,8 @@ public class InvokerInvocationHandler implements InvocationHandler {
             return invoker.equals(args[0]);
         }
 
+        // 这里的recreate方法很重要，他会调用AppResponse的recreate方法，
+        // 如果AppResponse对象中存在exception信息，则此方法中会throw这个异常
         return invoker.invoke(new RpcInvocation(method, args)).recreate();
     }
 }

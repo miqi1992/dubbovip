@@ -59,6 +59,8 @@ public class GenericFilter extends ListenableFilter {
         super.listener = new GenericListener();
     }
 
+
+
     @Override
     public Result invoke(Invoker<?> invoker, Invocation inv) throws RpcException {
         if ((inv.getMethodName().equals($INVOKE) || inv.getMethodName().equals($INVOKE_ASYNC))

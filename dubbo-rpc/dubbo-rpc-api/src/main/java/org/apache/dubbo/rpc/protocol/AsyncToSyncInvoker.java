@@ -49,7 +49,9 @@ public class AsyncToSyncInvoker<T> implements Invoker<T> {
 
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
-        Result asyncResult = invoker.invoke(invocation);
+        // 异步转同步
+
+        Result asyncResult = invoker.invoke(invocation);  // AsyncRpcResult--->CompletableFuture
 
         try {
             // 如果invocation指定是同步的，则阻塞等待结果

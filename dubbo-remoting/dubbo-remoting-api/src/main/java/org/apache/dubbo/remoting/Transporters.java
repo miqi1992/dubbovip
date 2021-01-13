@@ -76,6 +76,7 @@ public class Transporters {
         } else {
             handler = new ChannelHandlerDispatcher(handlers);
         }
+        // NettyTransporter
         return getTransporter().connect(url, handler);
     }
 

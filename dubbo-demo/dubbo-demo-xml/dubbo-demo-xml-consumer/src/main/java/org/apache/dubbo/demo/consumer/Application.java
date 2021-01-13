@@ -17,17 +17,19 @@
 package org.apache.dubbo.demo.consumer;
 
 import org.apache.dubbo.demo.DemoService;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class Application {
     public static void main(String[] args) {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("spring/dubbo-consumer.xml");
         context.start();
-        
-        DemoService demoService = context.getBean("demoService", DemoService.class); // 代理对象
-        String hello = demoService.sayHello("world");
-        System.out.println("result: " + hello);
+
+
+        // 接口的代理对象
+        DemoService demoService = context.getBean("demoService", DemoService.class);
+
+        String hello = demoService.sayHello("world");  // 执行服务
+
+        System.out.println("result周瑜: " + hello);
     }
 }

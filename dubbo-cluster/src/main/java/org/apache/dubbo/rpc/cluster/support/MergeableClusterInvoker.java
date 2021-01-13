@@ -65,7 +65,7 @@ public class MergeableClusterInvoker<T> extends AbstractClusterInvoker<T> {
         checkInvokers(invokers, invocation);
         String merger = getUrl().getMethodParameter(invocation.getMethodName(), MERGER_KEY);
         if (ConfigUtils.isEmpty(merger)) { // If a method doesn't have a merger, only invoke one Group
-            for (final Invoker<T> invoker : invokers) {
+            for (final Invoker<T> invoker : invokers) {  // DubboInvoker.g1, DubboInvoker.g2
                 if (invoker.isAvailable()) {
                     try {
                         return invoker.invoke(invocation);

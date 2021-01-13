@@ -39,6 +39,7 @@ public class ReconnectTimerTask extends AbstractTimerTask {
     @Override
     protected void doTask(Channel channel) {
         try {
+            System.out.println("重连任务");
             Long lastRead = lastRead(channel);
             Long now = now();
 
