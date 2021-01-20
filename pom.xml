@@ -149,7 +149,6 @@
         <module>dubbo-metadata-report</module>
         <module>dubbo-configcenter</module>
         <module>dubbo-dependencies</module>
-        <module>dubbo-luban</module>
     </modules>
 
     <dependencyManagement>

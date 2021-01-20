@@ -111,7 +111,7 @@ public class ExceptionFilter extends ListenableFilter {
                     }
 
                     // otherwise, wrap with RuntimeException and throw back to the client
-                    // 否则，包装成RuntimeException抛给客户端 LubanExexp
+                    // 否则，包装成RuntimeException抛给客户端 TulingExexp
                     appResponse.setException(new RuntimeException(StringUtils.toString(exception)));
                     return;
                 } catch (Throwable e) {
