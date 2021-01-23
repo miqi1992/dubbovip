@@ -401,6 +401,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 // if protocols not injvm checkRegistry
                 if (!LOCAL_PROTOCOL.equalsIgnoreCase(getProtocol())){
                     checkRegistry();
+                    // 加载注册中心地址
                     List<URL> us = loadRegistries(false);
                     if (CollectionUtils.isNotEmpty(us)) {
                         for (URL u : us) {
@@ -423,13 +424,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 // RegistryProtocol.refer() 或者 DubboProtocol.refer()
                 invoker = REF_PROTOCOL.refer(interfaceClass, urls.get(0));
             } else {
-                // 遍历所有的url进行refer，得到invoker
+                // 如果有多个url
+                // 1. 根据每个url，refer得到对应的invoker
+                // 2. 如果这多个urls中存在注册中心url，则把所有invoker整合为RegistryAwareClusterInvoker，该Invoker在调用时，会查看所有Invoker中是否有默认的，如果有则使用默认的Invoker，如果没有，则使用第一个Invoker
+                // 2. 如果这多个urls中不存在注册中心url，则把所有invoker整合为FailoverCluster
+
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
-                URL registryURL = null;
+                URL registryURL = null; // 用来记录urls中最后一个注册中心url
                 for (URL url : urls) {
                     invokers.add(REF_PROTOCOL.refer(interfaceClass, url));
 
-                    // 拿到urls中最后一个注册中心的地址，有啥用？看下面
                     if (REGISTRY_PROTOCOL.equals(url.getProtocol())) {
                         registryURL = url; // use last registry url
                     }
@@ -439,14 +443,11 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 if (registryURL != null) { // registry url is available
                     // use RegistryAwareCluster only when register's CLUSTER is available
                     URL u = registryURL.addParameter(CLUSTER_KEY, RegistryAwareCluster.NAME);
-
-                    // StaticDirectory表示静态服务目录，里面的invokers是不会变的
-                    // 生成一个FailoverClusterInvoker
+                    // StaticDirectory表示静态服务目录，里面的invokers是不会变的, 生成一个RegistryAwareCluster
                     // The invoker wrap relation would be: RegistryAwareClusterInvoker(StaticDirectory) -> FailoverClusterInvoker(RegistryDirectory, will execute route) -> Invoker
                     invoker = CLUSTER.join(new StaticDirectory(u, invokers));
                 } else { // not a registry url, must be direct invoke.
-                    // 如果不存在注册中心地址
-                    // 生成一个FailoverClusterInvoker
+                    // 如果不存在注册中心地址, 生成一个FailoverClusterInvoker
                     invoker = CLUSTER.join(new StaticDirectory(invokers));
                 }
             }

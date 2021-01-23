@@ -691,7 +691,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                             continue;
                         }
 
-                        // 该服务是否是动态，对应zookeeper就是是否是临时节点，对应dubbo中的功能就是静态服务
+                        // 该服务是否是动态，对应zookeeper上表示是否是临时节点，对应dubbo中的功能就是静态服务
                         url = url.addParameterIfAbsent(DYNAMIC_KEY, registryURL.getParameter(DYNAMIC_KEY));
 
                         // 基于注册中心地址的到监控中心地址，为什么是基于注册中心地址？
@@ -712,6 +712,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         }
 
                         // For providers, this is used to enable custom proxy to generate invoker
+                        // 服务使用的动态代理机制，如果为空则使用javassit
                         String proxy = url.getParameter(PROXY_KEY);
                         if (StringUtils.isNotEmpty(proxy)) {
                             registryURL = registryURL.addParameter(PROXY_KEY, proxy);
@@ -720,8 +721,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // 生成一个当前服务接口的代理对象
                         // 使用代理生成一个Invoker，Invoker表示服务提供者的代理，可以使用Invoker的invoke方法执行服务
                         // 对应的url为 registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-annotation-provider&dubbo=2.0.2&export=http%3A%2F%2F192.168.40.17%3A80%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-annotation-provider%26bean.name%3DServiceBean%3Aorg.apache.dubbo.demo.DemoService%26bind.ip%3D192.168.40.17%26bind.port%3D80%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%26pid%3D19472%26release%3D%26side%3Dprovider%26timestamp%3D1585207994860&pid=19472&registry=zookeeper&timestamp=1585207994828
-                        // 这个Invoker中包括了服务的实现者、服务接口类、服务的注册地址
-                        // 在Dubbo的源码中需要屏蔽具体的服务类型
+                        // 这个Invoker中包括了服务的实现者、服务接口类、服务的注册地址（针对当前服务的，参数export指定了当前服务）
+                        // 此invoker表示一个可执行的服务，调用invoker的invoke()方法即可执行服务,同时此invoker也可用来导出
                         Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
 
                         // DelegateProviderMetaDataInvoker也表示服务提供者，包括了Invoker和服务的配置
@@ -740,9 +741,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
                     }
 
-                    // 下面的代码和存在注册中心时一样，代码虽然一样，但是生成invoker的url是不一样的
-                    // 当存在注册中心时，是先使用Registy协议注册服务，然后在使用Http协议导出服务
-                    // 而没有注册中心时，是直接使用Http协议导出服务
+
                     Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, url);
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 

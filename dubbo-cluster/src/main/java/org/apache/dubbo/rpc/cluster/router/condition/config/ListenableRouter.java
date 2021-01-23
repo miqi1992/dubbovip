@@ -122,11 +122,12 @@ public abstract class ListenableRouter extends AbstractRouter implements Configu
         if (StringUtils.isEmpty(ruleKey)) {
             return;
         }
-        // 服务名+".condition-router"，或应用名+".condition-router"
+        // 服务名+".condition-router"，或 应用名+".condition-router"
         String routerKey = ruleKey + RULE_SUFFIX;
         // 绑定一个监听器去监听routerKey对应的路径，当前类ListenableRouter就自带了一个监听器
         configuration.addListener(routerKey, this);
-        // 绑定完监听器后主动的从配置中心获取一下routerKey路径下对应的数据
+
+        // 绑定完监听器后，主动的从配置中心获取一下当前服务或消费者应用的对应的路由配置
         String rule = configuration.getRule(routerKey, DynamicConfiguration.DEFAULT_GROUP);
 
         if (StringUtils.isNotEmpty(rule)) {

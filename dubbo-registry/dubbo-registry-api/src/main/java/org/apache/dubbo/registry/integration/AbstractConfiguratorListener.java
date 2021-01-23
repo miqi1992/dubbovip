@@ -64,7 +64,6 @@ public abstract class AbstractConfiguratorListener implements ConfigurationListe
                     ", raw config content is:\n " + event.getValue());
         }
 
-        //
         if (event.getChangeType().equals(ConfigChangeType.DELETED)) {
             configurators.clear();
         } else {

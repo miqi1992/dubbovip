@@ -186,6 +186,7 @@ public class RegistryProtocol implements Protocol {
 
     public void register(URL registryUrl, URL registeredProviderUrl) {
         Registry registry = registryFactory.getRegistry(registryUrl);
+        // 调用ZookeeperRegistry的register方法
         registry.register(registeredProviderUrl);
     }
 
@@ -196,11 +197,15 @@ public class RegistryProtocol implements Protocol {
 
     @Override
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
-        // originInvoker就是DelegateProviderMetaDataInvoker，表示一个服务提供者的Invoker
+        // 导出服务
+        // registry://   ---> RegistryProtocol
+        // zookeeper://  ---> ZookeeperRegistry
+        // dubbo://      ---> DubboProtocol
+        // provider://   --->
 
-        // 将registry://xxx?xx=xx&registry=zookeeper 转为 zookeeper://xxx?xx=xx
+        // 将registry://xxx?xx=xx&registry=zookeeper 转为---> zookeeper://xxx?xx=xx
         URL registryUrl = getRegistryUrl(originInvoker); // zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-provider-application&dubbo=2.0.2&export=dubbo%3A%2F%2F192.168.40.17%3A20880%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-provider-application%26bean.name%3DServiceBean%3Aorg.apache.dubbo.demo.DemoService%26bind.ip%3D192.168.40.17%26bind.port%3D20880%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26logger%3Dlog4j%26methods%3DsayHello%26pid%3D27656%26release%3D2.7.0%26side%3Dprovider%26timeout%3D3000%26timestamp%3D1590735956489&logger=log4j&pid=27656&release=2.7.0&timestamp=1590735956479
-        // url to export locally 服务提供者url
+        // 得到服务提供者url
         URL providerUrl = getProviderUrl(originInvoker); // dubbo://192.168.40.17:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-provider-application&bean.name=ServiceBean:org.apache.dubbo.demo.DemoService&bind.ip=192.168.40.17&bind.port=20880&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&logger=log4j&methods=sayHello&pid=27656&release=2.7.0&side=provider&timeout=3000&timestamp=1590735956489
 
         // Subscribe the override data
@@ -339,7 +344,7 @@ public class RegistryProtocol implements Protocol {
             logger.warn(new IllegalStateException("error state, exporter should not be null"));
         } else {
             // 到这里才能真正明白，为什么需要InvokerDelegate
-            // InvokerDelegate表示一个调用者，有invoker+url构成，invoker不变，url可变
+            // InvokerDelegate表示一个调用者，由invoker+url构成，invoker不变，url可变
             final Invoker<T> invokerDelegate = new InvokerDelegate<T>(originInvoker, newInvokerUrl);
             exporter.setExporter(protocol.export(invokerDelegate));
         }
@@ -358,8 +363,7 @@ public class RegistryProtocol implements Protocol {
     }
 
     private URL getRegistryUrl(Invoker<?> originInvoker) {
-        // 将registry://xxx?xx=xx&registry=zookeeper 转为
-        // zookeeper://xxx?xx=xx
+        // 将registry://xxx?xx=xx&registry=zookeeper 转为 zookeeper://xxx?xx=xx
 
         URL registryUrl = originInvoker.getUrl();
         if (REGISTRY_PROTOCOL.equals(registryUrl.getProtocol())) {
@@ -444,7 +448,7 @@ public class RegistryProtocol implements Protocol {
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
 
         // 从registry://的url中获取对应的注册中心，比如zookeeper， 默认为dubbo，dubbo提供了自带的注册中心实现
-        // registry:// ---> zookeeper://
+        // url由 registry:// 改变为---> zookeeper://
         url = URLBuilder.from(url)
                 .setProtocol(url.getParameter(REGISTRY_KEY, DEFAULT_REGISTRY))
                 .removeParameter(REGISTRY_KEY)
@@ -452,12 +456,13 @@ public class RegistryProtocol implements Protocol {
 
         // 拿到注册中心实现，ZookeeperRegistry
         Registry registry = registryFactory.getRegistry(url);
+
         // 下面这个代码，通过过git历史提交记录是用来解决SimpleRegistry不可用的问题
         if (RegistryService.class.equals(type)) {
             return proxyFactory.getInvoker((T) registry, type, url);
         }
 
-        // qs表示 queryString, 表示url中的参数，表示消费者引入服务所配置的参数
+        // qs表示 queryString, 表示url中的参数，表示消费者引入服务时所配置的参数
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
 
         // group="a,b" or group="*"
@@ -477,6 +482,15 @@ public class RegistryProtocol implements Protocol {
         return ExtensionLoader.getExtensionLoader(Cluster.class).getExtension("mergeable");
     }
 
+    /**
+     *
+     * @param cluster
+     * @param registry  注册中心实现类，ZookeeperRegistry
+     * @param type  服务接口类
+     * @param url   注册中心url
+     * @param <T>
+     * @return
+     */
     private <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url) {
         // RegistryDirectory表示动态服务目录，会和注册中心的数据保持同步
         // type表示一个服务对应一个RegistryDirectory，url表示注册中心地址
@@ -490,10 +504,12 @@ public class RegistryProtocol implements Protocol {
         // 引入服务所配置的参数
         Map<String, String> parameters = new HashMap<String, String>(directory.getUrl().getParameters());
 
-        // 订阅url，不要把它理解为订阅地址，可以把这个url理解为订阅地址的信息在这个url中
+        // 消费者url
         URL subscribeUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (!ANY_VALUE.equals(url.getServiceInterface()) && url.getParameter(REGISTER_KEY, true)) {
             directory.setRegisteredConsumerUrl(getRegisteredConsumerUrl(subscribeUrl, url));
+
+            // 注册简化后的消费url
             registry.register(directory.getRegisteredConsumerUrl());
         }
 
@@ -502,6 +518,7 @@ public class RegistryProtocol implements Protocol {
         directory.buildRouterChain(subscribeUrl);
 
         // 服务目录需要订阅的几个路径
+        // 当前所引入的服务的消费应用目录：/dubbo/config/dubbo/dubbo-demo-consumer-application.configurators
         // 当前所引入的服务的动态配置目录：/dubbo/config/dubbo/org.apache.dubbo.demo.DemoService:1.1.1:g1.configurators
         // 当前所引入的服务的提供者目录：/dubbo/org.apache.dubbo.demo.DemoService/providers
         // 当前所引入的服务的老版本动态配置目录：/dubbo/org.apache.dubbo.demo.DemoService/configurators

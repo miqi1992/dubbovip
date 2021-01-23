@@ -45,12 +45,15 @@ public class RegistryAwareClusterInvoker<T> extends AbstractClusterInvoker<T> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Result doInvoke(Invocation invocation, final List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         // First, pick the invoker (XXXClusterInvoker) that comes from the local registry, distinguish by a 'default' key.
+        // 如果在引入服务时，存在多个invoker，并且某个invoker是default的，则在调用时会使用该invoker
         for (Invoker<T> invoker : invokers) {
             if (invoker.isAvailable() && invoker.getUrl().getParameter(REGISTRY_KEY + "." + DEFAULT_KEY, false)) {
                 return invoker.invoke(invocation);
             }
         }
+
         // If none of the invokers has a local signal, pick the first one available.
+        // 如果没有default，则取第一个
         for (Invoker<T> invoker : invokers) {
             // 如果对应的注册中心中没有当前调用的服务信息，则不可用
             if (invoker.isAvailable()) {
