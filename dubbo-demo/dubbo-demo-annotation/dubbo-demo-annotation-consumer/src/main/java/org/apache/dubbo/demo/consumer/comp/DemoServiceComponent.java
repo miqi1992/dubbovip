@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Component("demoServiceComponent")
 public class DemoServiceComponent implements DemoService {
 
-    @Reference(url = "dubbo://169.254.182.121:20880/org.apache.dubbo.demo.DemoService?group=g1")
+    @Reference
     private DemoService demoService;   //
 
     @Override

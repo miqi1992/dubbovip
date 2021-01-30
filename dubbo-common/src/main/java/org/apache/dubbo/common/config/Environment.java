@@ -123,7 +123,7 @@ public class Environment {
         // 配置中心APP配置
         compositeConfiguration.addConfiguration(this.getAppExternalConfig(prefix, id));
 
-        // 配置中心Gloab配置
+        // 配置中心Global配置
         compositeConfiguration.addConfiguration(this.getExternalConfig(prefix, id));
 
         // dubbo.properties中的配置

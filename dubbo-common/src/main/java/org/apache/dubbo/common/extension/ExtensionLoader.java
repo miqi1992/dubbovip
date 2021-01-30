@@ -357,19 +357,17 @@ public class ExtensionLoader<T> {
             return getDefaultExtension();
         }
 
-        // A---car1,  B----car2 ,   C-----car1
-        // concurenthashmap   car1--->扩展点实例对象
-        // concurenthashmap.ocon(car1) ---> 实例对象
-
         final Holder<Object> holder = getOrCreateHolder(name);
         Object instance = holder.get();
+
+        // 如果有两个线程同时来获取同一个name的扩展点对象，那只会有一个线程会进行创建
         if (instance == null) {
-            synchronized (holder) {   // A
+            synchronized (holder) {
                 instance = holder.get();
                 if (instance == null) {
                     // 创建扩展点实例对象
-                    instance = createExtension(name);   // 对象
-                    holder.set(instance);   // c
+                    instance = createExtension(name);   // 创建扩展点对象
+                    holder.set(instance);
                 }
             }
         }
@@ -560,7 +558,7 @@ public class ExtensionLoader<T> {
             }
 
             // 依赖注入 IOC
-            injectExtension(instance); //
+            injectExtension(instance);
 
             // AOP
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;

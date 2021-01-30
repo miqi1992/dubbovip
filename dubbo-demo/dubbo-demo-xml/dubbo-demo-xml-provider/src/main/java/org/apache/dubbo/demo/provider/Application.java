@@ -24,9 +24,6 @@ public class Application {
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("spring/dubbo-provider.xml");
         context.start();
 
-
-        System.in.read();  //阻塞线程
-
-        // Controller Service
+        System.in.read();
     }
 }

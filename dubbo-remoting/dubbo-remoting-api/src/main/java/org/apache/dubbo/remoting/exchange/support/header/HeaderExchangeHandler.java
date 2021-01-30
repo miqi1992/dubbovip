@@ -21,11 +21,7 @@ import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
 import org.apache.dubbo.common.utils.NetUtils;
 import org.apache.dubbo.common.utils.StringUtils;
-import org.apache.dubbo.remoting.Channel;
-import org.apache.dubbo.remoting.ChannelHandler;
-import org.apache.dubbo.remoting.Constants;
-import org.apache.dubbo.remoting.ExecutionException;
-import org.apache.dubbo.remoting.RemotingException;
+import org.apache.dubbo.remoting.*;
 import org.apache.dubbo.remoting.exchange.ExchangeChannel;
 import org.apache.dubbo.remoting.exchange.ExchangeHandler;
 import org.apache.dubbo.remoting.exchange.Request;
@@ -79,7 +75,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
         // 请求id，请求版本
-            Response res = new Response(req.getId(), req.getVersion());
+        Response res = new Response(req.getId(), req.getVersion());
         if (req.isBroken()) {
             // 请求处理失败
             Object data = req.getData();
@@ -105,17 +101,18 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         // find handler by message class.
         Object msg = req.getData();
         try {
-            // 继续向下调用
+            // 继续向下调用，分异步调用和同步调用，如果是同步则会阻塞，如果是异步则不会阻塞
             CompletionStage<Object> future = handler.reply(channel, msg);   // 异步执行服务
-            // 单下层handler处理完了之后，则发送响应结果
+
+            // 如果是同步调用则直接拿到结果，并发送到channel中去
+            // 如果是异步调用则会监听，直到拿到服务执行结果，然后发送到channel中去
             future.whenComplete((appResult, t) -> {
-                    try {
+                try {
                     if (t == null) {
-                        // 如果执行服务时，是服务实现类执行时出现了异常，那么需要把这个异常发送给服务消费者
-                        // 消费者在DecodeHandler中会解析响应数据并设置
                         res.setStatus(Response.OK);
                         res.setResult(appResult);
                     } else {
+                        // 服务执行过程中出现了异常，则把Throwable转成字符串，发送给channel中，也就是发送给客户端
                         res.setStatus(Response.SERVICE_ERROR);
                         res.setErrorMessage(StringUtils.toString(t));
                     }
