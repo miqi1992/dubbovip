@@ -921,7 +921,7 @@ public class ExtensionLoader<T> {
 
     private Class<?> getAdaptiveExtensionClass() {
         // 获取当前接口的所有扩展类
-        getExtensionClasses(); //
+        getExtensionClasses();
         // 缓存了@Adaptive注解标记的类
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
