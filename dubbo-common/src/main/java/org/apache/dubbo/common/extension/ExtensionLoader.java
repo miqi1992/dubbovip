@@ -101,9 +101,8 @@ public class ExtensionLoader<T> {
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
-        // ExtensionFactory表示扩展类实例工厂，可以利用ExtensionFactory得到某个扩展的对象实例
-        //                                                         得到ExtensionFactory接口的adaptive实例-AdaptiveExtensionFactory实例，利用AdaptiveExtensionFactory实例来获取某个类型或名字的实例对象
-        objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());   // AdaptiveExtensionFactory
+        // objectFactory表示当前ExtensionLoader内部的一个对象工厂，可以用来获取对象
+        objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
     private static <T> boolean withExtensionAnnotation(Class<T> type) {
@@ -560,12 +559,11 @@ public class ExtensionLoader<T> {
             // 依赖注入 IOC
             injectExtension(instance);
 
-            // AOP
+            // AOP，cachedWrapperClasses无序
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (CollectionUtils.isNotEmpty(wrapperClasses)) {
                 for (Class<?> wrapperClass : wrapperClasses) {
-                    // new CarWrapper(instance)---CarWrapper实例
-                    instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));  // new YMapper(new XWrapper（市里的）)
+                    instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                 }
             }
 
@@ -663,6 +661,9 @@ public class ExtensionLoader<T> {
      * @return
      */
     private Map<String, Class<?>> getExtensionClasses() {
+        // cachedClasses是一个Holder对象，持有的就是一个Map<String, Class<?>>
+        // 为什么要多此一举，也是为了解决并发，Holder对象用来作为锁
+
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
             synchronized (cachedClasses) {

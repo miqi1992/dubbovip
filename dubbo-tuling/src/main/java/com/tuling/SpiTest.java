@@ -2,14 +2,27 @@ package com.tuling;
 
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.ExtensionLoader;
+import org.apache.dubbo.common.utils.ConcurrentHashSet;
 import org.apache.dubbo.rpc.Protocol;
+
+import java.util.ServiceLoader;
 
 public class SpiTest {
     public static void main(String[] args) {
 
+//        ServiceLoader<Car> cars = ServiceLoader.load(Car.class);
+//        for (Car car : cars) {
+//            System.out.println(car.getCarName(null));
+//        }
+
+
 //        ExtensionLoader<Protocol> extensionLoader = ExtensionLoader.getExtensionLoader(Protocol.class);
 //        Protocol protocol = extensionLoader.getExtension("http");
 //        System.out.println(protocol);
+
+//        ExtensionLoader<Car> extensionLoader = ExtensionLoader.getExtensionLoader(Car.class);
+//        Car car = extensionLoader.getExtension("red");
+//        System.out.println(car);
 
 //        ExtensionLoader<Person> extensionLoader = ExtensionLoader.getExtensionLoader(Person.class);
 //        Person person = extensionLoader.getExtension("black");
@@ -27,5 +40,12 @@ public class SpiTest {
 //            System.out.println(activateExtension);
 //        }
 
+
+//        ConcurrentHashSet set = new ConcurrentHashSet();
+//        set.add("周瑜1");
+//        set.add("周瑜2");
+//        set.add("周瑜3");
+//
+//        System.out.println(set);
     }
 }

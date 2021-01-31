@@ -329,9 +329,7 @@ public class DubboProtocol extends AbstractProtocol {
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(IS_SERVER_KEY, true);
         if (isServer) {
-
             // 缓存Server对象
-
             ExchangeServer server = serverMap.get(key);
 
             // DCL，Double Check Lock

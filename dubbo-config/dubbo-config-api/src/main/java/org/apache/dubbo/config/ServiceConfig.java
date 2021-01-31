@@ -627,7 +627,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             map.put(GENERIC_KEY, generic);
             map.put(METHODS_KEY, ANY_VALUE);
         } else {
-            // 拿服务的版本
             String revision = Version.getVersion(interfaceClass, version);
             if (revision != null && revision.length() > 0) {
                 map.put(REVISION_KEY, revision);
