@@ -15,4 +15,9 @@ public class CarWrapper implements Car {
         System.out.println("wrapper...");
         return car.getCarName(url);
     }
+
+    @Override
+    public String sayHell() {
+        return null;
+    }
 }

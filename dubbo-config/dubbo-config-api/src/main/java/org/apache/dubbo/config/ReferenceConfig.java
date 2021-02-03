@@ -340,7 +340,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         }
         map.put(REGISTER_IP_KEY, hostToRegistry);
 
-        // 得到一个代理对象
+        // 根据
         ref = createProxy(map);
 
         String serviceKey = URL.buildKey(interfaceName, group, version);

@@ -22,6 +22,11 @@ import org.apache.dubbo.config.ApplicationConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.demo.DemoService;
+import org.apache.dubbo.registry.Registry;
+import org.apache.dubbo.registry.support.AbstractRegistryFactory;
+import org.apache.dubbo.registry.support.ProviderConsumerRegTable;
+
+import java.util.Collection;
 
 public class Application {
     public static void main(String[] args) {
@@ -32,5 +37,10 @@ public class Application {
         DemoService service = reference.get();
         String message = service.sayHello("dubbo");
         System.out.println(message);
+
+        Collection<Registry> registries = AbstractRegistryFactory.getRegistries();
+        for (Registry registry : registries) {
+            registry.destroy();
+        }
     }
 }

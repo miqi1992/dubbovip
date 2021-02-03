@@ -24,14 +24,20 @@ public class SpiTest {
 //        System.out.println(protocol);
 
 //        ExtensionLoader<Car> extensionLoader = ExtensionLoader.getExtensionLoader(Car.class);
-//        Car car = extensionLoader.getExtension("red");
-//        System.out.println(car);
-
-//        ExtensionLoader<Person> extensionLoader = ExtensionLoader.getExtensionLoader(Person.class);
-//        Person person = extensionLoader.getExtension("black");
 //
-//        URL url = new URL("x", "localhost", 8080);
-//        url = url.addParameter("car", "black");
+//        Car car = extensionLoader.getExtension("true"); // 自动注入，AOP
+//
+//        System.out.println(car.getCarName());
+
+        ExtensionLoader<Person> extensionLoader = ExtensionLoader.getExtensionLoader(Person.class);
+        Person person = extensionLoader.getExtension("black");  // BlackPerson
+
+        URL url = new URL("x", "localhost", 8080);
+        url = url.addParameter("car", "black");
+
+        System.out.println(person.getCar().getCarName(url));  // 代理逻辑
+
+
 //        System.out.println(person.getCar().getCarName(url));
 
 

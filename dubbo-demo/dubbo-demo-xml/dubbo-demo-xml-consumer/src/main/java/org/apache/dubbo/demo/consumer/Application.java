@@ -29,7 +29,7 @@ public class Application {
 
         // 接口的代理对象
         DemoService demoService = context.getBean("demoService", DemoService.class);
-        String hello = demoService.sayHello("world");  // 执行服务
+        String hello = demoService.sayHello("world");  // dubbo代理逻辑---》执行服务
         System.out.println("result周瑜: " + hello);
     }
 }

@@ -101,7 +101,7 @@ public class ExtensionLoader<T> {
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
-        // objectFactory表示当前ExtensionLoader内部的一个对象工厂，可以用来获取对象
+        // objectFactory表示当前ExtensionLoader内部的一个对象工厂，可以用来获取对象  AdaptiveExtensionFactory
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
@@ -319,6 +319,7 @@ public class ExtensionLoader<T> {
     }
 
     private Holder<Object> getOrCreateHolder(String name) {
+        // Map<String, Object>
         Holder<Object> holder = cachedInstances.get(name);
         if (holder == null) {
             cachedInstances.putIfAbsent(name, new Holder<>());
@@ -361,7 +362,7 @@ public class ExtensionLoader<T> {
 
         // 如果有两个线程同时来获取同一个name的扩展点对象，那只会有一个线程会进行创建
         if (instance == null) {
-            synchronized (holder) {
+            synchronized (holder) { // 一个name对应一把锁
                 instance = holder.get();
                 if (instance == null) {
                     // 创建扩展点实例对象
@@ -606,6 +607,7 @@ public class ExtensionLoader<T> {
                     String property = getSetterProperty(method);   // person
 
                     // 根据参数类型或属性名，从objectFactory中获取到对象，然后调用set方法进行注入
+                    // AdaptiveExtensionFactory
                     Object object = objectFactory.getExtension(pt, property); // User.class, user
                     if (object != null) {
                         method.invoke(instance, object);
