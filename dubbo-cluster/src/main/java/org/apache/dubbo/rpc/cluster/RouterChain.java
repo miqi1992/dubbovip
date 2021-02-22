@@ -106,6 +106,7 @@ public class RouterChain<T> {
      */
     public List<Invoker<T>> route(URL url, Invocation invocation) {
         List<Invoker<T>> finalInvokers = invokers;
+        // 使用路由对服务提供者进行过滤
         for (Router router : routers) {
             finalInvokers = router.route(finalInvokers, url, invocation);
         }

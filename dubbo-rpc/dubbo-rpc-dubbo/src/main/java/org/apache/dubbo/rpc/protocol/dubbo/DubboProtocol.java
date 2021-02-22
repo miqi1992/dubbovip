@@ -125,7 +125,7 @@ public class DubboProtocol extends AbstractProtocol {
 
             // 转成Invocation对象，要开始用反射执行方法了
             Invocation inv = (Invocation) message;
-            Invoker<?> invoker = getInvoker(channel, inv);  // 服
+            Invoker<?> invoker = getInvoker(channel, inv);  // 服务实现者
 
             // need to consider backward-compatibility if it's a callback
             if (Boolean.TRUE.toString().equals(inv.getAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
@@ -292,7 +292,7 @@ public class DubboProtocol extends AbstractProtocol {
 
         // export service.
         String key = serviceKey(url);
-        // 构造一个Exporter
+        // 构造一个Exporter进行服务导出
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
         exporterMap.put(key, exporter);
 
@@ -316,6 +316,7 @@ public class DubboProtocol extends AbstractProtocol {
         // 开启NettyServer
         openServer(url);
 
+        // 特殊的一些序列化机制，比如kryo提供了注册机制来注册类，提高序列化和反序列化的速度
         optimizeSerialization(url);
 
         return exporter;
@@ -411,6 +412,7 @@ public class DubboProtocol extends AbstractProtocol {
                 SerializableClassRegistry.registerClass(c);
             }
 
+            // 特殊的一些序列化机制，比如kryo提供了注册机制来注册类，提高序列化和反序列化的速度
             optimizers.add(className);
 
         } catch (ClassNotFoundException e) {
@@ -426,11 +428,11 @@ public class DubboProtocol extends AbstractProtocol {
 
     @Override
     public <T> Invoker<T> protocolBindingRefer(Class<T> serviceType, URL url) throws RpcException {
-        // 优化序列化？在dubbo的protocol中可以通过serialization配置序列化方式，但是这里的optimizer属性是干嘛的？
+
         optimizeSerialization(url);
 
         // create rpc invoker.
-        // clients很重要，为什么一个DubboInvoker会有多个clients，为了提高效率，因为每个client和server之间都会有一个socket
+        // clients很重要，为什么一个DubboInvoker会有多个clients，为了提高效率，因为每个client和server之间都会有一个socket, 多个client连的是同一个server
         // 在DubboInvoker发送请求时会轮询clients去发送数据
         DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
         invokers.add(invoker);
@@ -445,14 +447,15 @@ public class DubboProtocol extends AbstractProtocol {
 
         boolean useShareConnect = false;
 
-        // connections表示建立几个socket连接，在DubboProtocol中，每构造一个Client就会去和Server建立一个Socket连接
+        // connections表示对当前服务提供者建立connections个socket连接
+        // 消费者应用引用了两个服务A和B，这两个服务都部署在了应用C上，如果CONNECTIONS_KEY为2，那么消费者应用会与应用C建立4个Socket连接
         int connections = url.getParameter(CONNECTIONS_KEY, 0);
 
         List<ReferenceCountExchangeClient> shareClients = null;
 
-        // 如果connections为0，那肯定不能不建议1一个Socket，这时会去获取shareconnections参数，默认为1
-        // 表示消费端至少建立
         // if not configured, connection is shared, otherwise, one connection for one service
+        // 如果没有配置connections，那么则取shareConnectionsStr（默认为1），表示共享socket连接个数
+        // 消费者应用引用了两个服务A和B，这两个服务都部署在了应用C上，如果shareConnectionsStr为2，那么消费者应用会与应用C建立2个Socket连接
         if (connections == 0) {
             useShareConnect = true;
 
@@ -465,7 +468,6 @@ public class DubboProtocol extends AbstractProtocol {
             shareClients = getSharedClient(url, connections);
         }
 
-        //
         ExchangeClient[] clients = new ExchangeClient[connections];
         for (int i = 0; i < clients.length; i++) {
             // 如果使用共享的，则利用shareClients

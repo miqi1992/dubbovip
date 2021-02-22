@@ -55,10 +55,6 @@ public class ProtocolFilterWrapper implements Protocol {
         // 根据url获取filter，根据url中的parameters取key为key的value所对应的filter，但是还会匹配group
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
 
-        // ConsumerContextFilter--->FutureFilter--->MonitorFilter
-        // ConsumerContextFilter用来设置RpcContext
-        //
-
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);
@@ -163,7 +159,7 @@ public class ProtocolFilterWrapper implements Protocol {
             // 执行过滤器链
             Result asyncResult = filterInvoker.invoke(invocation);
 
-            // 过滤器都执行完了之后，回调每个过滤器的onResponse或onError方法
+            // 过滤器都执行完了之后，回调每个ListenableFilter过滤器的onResponse或onError方法
             asyncResult = asyncResult.whenCompleteWithContext((r, t) -> {
                 for (int i = filters.size() - 1; i >= 0; i--) {
                     Filter filter = filters.get(i);

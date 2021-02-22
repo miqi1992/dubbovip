@@ -265,19 +265,15 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
      */
     private void registerServiceBean(BeanDefinitionHolder beanDefinitionHolder, BeanDefinitionRegistry registry,
                                      DubboClassPathBeanDefinitionScanner scanner) {
-        // 处理扫描到的每一个BeanDefinition
-        // 1. 得到@Service注解上所配置的参数
-        // 2. 根据每一个BeanDefinition会再额外的生成一个ServiceBean
-        // 3. 对于每一个被@Service注解的类（服务的实现类），会生成两个Bean，一个服务实现类对应的Bean（普通Bean，和@Component一样），一个ServiceBean（Dubbo中要用到的Bean，因为在ServiceBean中包括了很的Config）
-
-        // 具体的服务实现类
+        // 服务实现类
         Class<?> beanClass = resolveClass(beanDefinitionHolder);
-        // @Service可以对服务进行各种配置
+        // @Service注解
         Annotation service = findServiceAnnotation(beanClass);
 
         /**
          * The {@link AnnotationAttributes} of @Service annotation
          */
+        // @Service注解上的信息
         AnnotationAttributes serviceAnnotationAttributes = getAnnotationAttributes(service, false, false);
 
         // 服务实现类对应的接口
@@ -289,7 +285,7 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
         AbstractBeanDefinition serviceBeanDefinition =
                 buildServiceBeanDefinition(service, serviceAnnotationAttributes, interfaceClass, annotatedServiceBeanName);
 
-        // ServiceBean Bean name   ServiceBean表示服务，我们要使用一个服务应该拿ServiceBean
+        // ServiceBean Bean name
         String beanName = generateServiceBeanName(serviceAnnotationAttributes, interfaceClass);
 
         if (scanner.checkCandidate(beanName, serviceBeanDefinition)) { // check duplicated candidate bean

@@ -92,8 +92,10 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
             AsyncRpcResult asyncRpcResult = new AsyncRpcResult(invocation);
 
             //设置一个回调，如果是异步调用，那么服务执行完成后将执行这里的回调
-            // 不会阻塞
             future.whenComplete((obj, t) -> {
+                // 当服务执行完后，将服务之后将结果或异常设置到AsyncRpcResult中
+                // 如果是异步服务，那么服务之后的异常会在此处封装到AppResponse中然后返回
+                // 如果是同步服务出异常了，则会在下面将异常封装到AsyncRpcResult中
                 AppResponse result = new AppResponse();
                 if (t != null) {
                     if (t instanceof CompletionException) {
@@ -115,9 +117,10 @@ public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
             if (RpcContext.getContext().isAsyncStarted() && !RpcContext.getContext().stopAsync()) {
                 logger.error("Provider async started, but got an exception from the original method, cannot write the exception back to consumer because an async result may have returned the new thread.", e);
             }
+            // 同步服务执行时如何出异常了，会在此处将异常信息封装为一个AsyncRpcResult然后返回
             return AsyncRpcResult.newDefaultAsyncResult(null, e.getTargetException(), invocation);
         } catch (Throwable e) {
-            // 只会抛出RpcException，其他异常都会被包装成Result对象
+            // 执行服务后的所有异常都会包装为RpcException进行抛出
             throw new RpcException("Failed to invoke remote proxy method " + invocation.getMethodName() + " to " + getUrl() + ", cause: " + e.getMessage(), e);
         }
     }

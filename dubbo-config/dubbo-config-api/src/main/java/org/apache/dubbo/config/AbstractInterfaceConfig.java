@@ -286,7 +286,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             prepareEnvironment();
         }
 
-        // 从配置中心取到配置数据后，刷新所有的XxConfig中的属性
+        // 从配置中心取到配置数据后，刷新所有的XxConfig中的属性，除开ServiceConfig
         ConfigManager.getInstance().refreshAll();
     }
 

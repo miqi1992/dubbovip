@@ -36,8 +36,6 @@ import static org.apache.dubbo.config.spring.util.AnnotatedBeanDefinitionRegistr
  */
 public class DubboConfigConfigurationRegistrar implements ImportBeanDefinitionRegistrar {
 
-    //
-
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         System.out.println("执行DubboConfigConfigurationRegistrar");
@@ -46,7 +44,7 @@ public class DubboConfigConfigurationRegistrar implements ImportBeanDefinitionRe
         AnnotationAttributes attributes = AnnotationAttributes.fromMap(
                 importingClassMetadata.getAnnotationAttributes(EnableDubboConfig.class.getName()));
 
-        boolean multiple = attributes.getBoolean("multiple");
+        boolean multiple = attributes.getBoolean("multiple"); //true
 
         // Single Config Bindings
         registerBeans(registry, DubboConfigConfiguration.Single.class);

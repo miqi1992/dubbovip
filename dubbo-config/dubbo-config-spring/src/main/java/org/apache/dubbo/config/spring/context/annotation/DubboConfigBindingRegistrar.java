@@ -136,6 +136,7 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
         }
 
         // 注册一个NamePropertyDefaultValueDubboConfigBeanCustomizer的bean
+        // 用来把某个XxConfig所对应的beanName设置到name属性中去
         registerDubboConfigBeanCustomizers(registry);
 
     }

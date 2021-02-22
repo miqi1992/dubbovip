@@ -201,11 +201,10 @@ public class RegistryProtocol implements Protocol {
         // registry://   ---> RegistryProtocol
         // zookeeper://  ---> ZookeeperRegistry
         // dubbo://      ---> DubboProtocol
-        // provider://   --->
 
-        // 将registry://xxx?xx=xx&registry=zookeeper 转为---> zookeeper://xxx?xx=xx
+        // registry://xxx?xx=xx&registry=zookeeper ---> zookeeper://xxx?xx=xx     表示注册中心
         URL registryUrl = getRegistryUrl(originInvoker); // zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-provider-application&dubbo=2.0.2&export=dubbo%3A%2F%2F192.168.40.17%3A20880%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-provider-application%26bean.name%3DServiceBean%3Aorg.apache.dubbo.demo.DemoService%26bind.ip%3D192.168.40.17%26bind.port%3D20880%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26logger%3Dlog4j%26methods%3DsayHello%26pid%3D27656%26release%3D2.7.0%26side%3Dprovider%26timeout%3D3000%26timestamp%3D1590735956489&logger=log4j&pid=27656&release=2.7.0&timestamp=1590735956479
-        // 得到服务提供者url
+        // 得到服务提供者url，表示服务提供者
         URL providerUrl = getProviderUrl(originInvoker); // dubbo://192.168.40.17:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-provider-application&bean.name=ServiceBean:org.apache.dubbo.demo.DemoService&bind.ip=192.168.40.17&bind.port=20880&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&logger=log4j&methods=sayHello&pid=27656&release=2.7.0&side=provider&timeout=3000&timestamp=1590735956489
 
         // Subscribe the override data
@@ -308,7 +307,7 @@ public class RegistryProtocol implements Protocol {
         // 获取准确的ProviderUrl
         // update registry
         URL registryUrl = getRegistryUrl(originInvoker);
-        // 对于一个服务提供者url，在注册到注册中心时，会先进行简化，所以如果
+        // 对于一个服务提供者url，在注册到注册中心时，会先进行简化
         final URL registeredProviderUrl = getRegisteredProviderUrl(newInvokerUrl, registryUrl);
 
         //decide if we need to re-publish
@@ -474,7 +473,7 @@ public class RegistryProtocol implements Protocol {
             }
         }
 
-        // 这里的cluster是cluster的Adaptive对象
+        // 这里的cluster是cluster的Adaptive对象,扩展点
         return doRefer(cluster, registry, type, url);
     }
 
@@ -518,7 +517,7 @@ public class RegistryProtocol implements Protocol {
         directory.buildRouterChain(subscribeUrl);
 
         // 服务目录需要订阅的几个路径
-        // 当前所引入的服务的消费应用目录：/dubbo/config/dubbo/dubbo-demo-consumer-application.configurators
+        // 当前应用所对应的动态配置目录：/dubbo/config/dubbo/dubbo-demo-consumer-application.configurators
         // 当前所引入的服务的动态配置目录：/dubbo/config/dubbo/org.apache.dubbo.demo.DemoService:1.1.1:g1.configurators
         // 当前所引入的服务的提供者目录：/dubbo/org.apache.dubbo.demo.DemoService/providers
         // 当前所引入的服务的老版本动态配置目录：/dubbo/org.apache.dubbo.demo.DemoService/configurators
@@ -526,7 +525,7 @@ public class RegistryProtocol implements Protocol {
         directory.subscribe(subscribeUrl.addParameter(CATEGORY_KEY,
                 PROVIDERS_CATEGORY + "," + CONFIGURATORS_CATEGORY + "," + ROUTERS_CATEGORY));
 
-        // 利用传进来的cluster，join得到invoker,
+        // 利用传进来的cluster，join得到invoker, MockClusterWrapper
         Invoker invoker = cluster.join(directory);
         ProviderConsumerRegTable.registerConsumer(invoker, url, subscribeUrl, directory);
         return invoker;

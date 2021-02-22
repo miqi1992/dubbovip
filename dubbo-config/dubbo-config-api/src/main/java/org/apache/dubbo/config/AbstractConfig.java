@@ -639,7 +639,7 @@ public abstract class AbstractConfig implements Serializable {
             CompositeConfiguration compositeConfiguration = Environment.getInstance().getConfiguration(getPrefix(), getId());
 
             // 表示XxConfig对象本身- AbstractConfig
-            Configuration config = new ConfigConfigurationAdapter(this);
+            Configuration config = new ConfigConfigurationAdapter(this);  // ServiceConfig
 
             if (Environment.getInstance().isConfigCenterFirst()) {
                 // The sequence would be: SystemConfiguration -> AppExternalConfiguration -> ExternalConfiguration -> AbstractConfig -> PropertiesConfiguration
@@ -650,8 +650,7 @@ public abstract class AbstractConfig implements Serializable {
             }
 
             // loop methods, get override value and set the new value back to method
-            //
-            Method[] methods = getClass().getMethods();
+            Method[] methods = getClass().getMethods();  //ServiceBean
             for (Method method : methods) {
                 // 是不是setXX()方法
                 if (MethodUtils.isSetter(method)) {

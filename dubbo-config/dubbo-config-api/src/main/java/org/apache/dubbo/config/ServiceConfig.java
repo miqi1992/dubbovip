@@ -290,44 +290,26 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return unexported;
     }
 
-    /**
-     * 1. ServiceConfig中的某些属性如果是空的，那么就从ProviderConfig、ModuleConfig、ApplicationConfig中获取
-     * 2. 从配置中心获取配置，包括应用配置和全局配置
-     * 3. 从配置中心获取Provider配置
-     * 4. 从配置中心获取Protocol配置
-     * 5. 如果ApplicationConfig为空，则构造一个ApplicationConfig
-     * 6. 从配置中心获取Registry配置
-     * 7. 更新ServiceConfig中的属性为优先级最高的配置
-     * 8. 更新MetadataReportConfig中的属性为优先级最高的配置
-     * 9. 检查当前服务是不是一个泛化服务
-     * 10.检查Stub和Local
-     * 11.检查Mock
-     */
     public void checkAndUpdateSubConfigs() {
         // Use default configs defined explicitly on global configs
         // ServiceConfig中的某些属性如果是空的，那么就从ProviderConfig、ModuleConfig、ApplicationConfig中获取
+        // 补全ServiceConfig中的属性
         completeCompoundConfigs();
 
         // Config Center should always being started first.
         // 从配置中心获取配置，包括应用配置和全局配置
         // 把获取到的配置放入到Environment中的externalConfigurationMap和appExternalConfigurationMap中
-        // 并刷新所有的Config属性
+        // 并刷新所有的XxConfig的属性（除开ServiceConfig），刷新的意思就是将配置中心的配置覆盖调用XxConfig中的属性
         startConfigCenter();
 
-        // 如果没有ProviderConfig对象，则创建一个
         checkDefault();
 
-        // 如果没有单独的配置protocols，那么就从provider获取配置的协议，添加到的ServiceConfig中去
-        // 假如程序员在配置文件中配了一个dubbo协议，配置中心的全局配置或应用配置中也配置了一个协议，那么就会被添加到ServiceConfig中
         checkProtocol();
-
 
         checkApplication();
 
-
         // if protocol is not injvm checkRegistry
         // 如果protocol不是只有injvm协议，表示服务调用不是只在本机jvm里面调用，那就需要用到注册中心
-        // 如果protocol是injvm，表示本地调用
         if (!isOnlyInJvm()) {
             checkRegistry();
         }
@@ -449,7 +431,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     protected synchronized void doExport() {
-        // 当前服务已经被取消了，就不能再导出了，为什么？
         if (unexported) {
             throw new IllegalStateException("The service " + interfaceClass.getName() + " has already unexported!");
         }
@@ -499,17 +480,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
-        // 得到url，注册服务也是一个服务，所以也会有对应的url，通过调用该url完成服务注册
-        List<URL> registryURLs = loadRegistries(true);   //
+        // registryURL 表示一个注册中心
+        List<URL> registryURLs = loadRegistries(true);
 
-        // 遍历每个协议
-        // 一个协议一个服务
         for (ProtocolConfig protocolConfig : protocols) {
-            // path表示服务名
-            // contextPath表示应用名（可配置）
+
             // pathKey = group/contextpath/path:version
             // 例子：myGroup/user/org.apache.dubbo.demo.DemoService:1.0.1
-
             String pathKey = URL.buildKey(getContextPath(protocolConfig).map(p -> p + "/" + path).orElse(path), group, version);
 
             // ProviderModel中存在服务提供者访问路径，实现类，接口，以及接口中的各个方法对应的ProviderMethodModel
@@ -519,7 +496,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             // ApplicationModel表示应用中有哪些服务提供者和引用了哪些服务
             ApplicationModel.initProviderModel(pathKey, providerModel);
 
-            // 每种协议导出一个单独的服务,注册到各个注册中心
+            // 重点
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }
@@ -659,7 +636,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         URL url = new URL(name, host, port, getContextPath(protocolConfig).map(p -> p + "/" + path).orElse(path), map);
         // url：http://192.168.40.17:80/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-annotation-provider&bean.name=ServiceBean:org.apache.dubbo.demo.DemoService&bind.ip=192.168.40.17&bind.port=80&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello&pid=285072&release=&side=provider&timestamp=1585206500409
 
-        // 可以通过ConfiguratorFactory，在服务导出时候进行统一配置
+        // 可以通过ConfiguratorFactory，对服务url再次进行配置
         if (ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                 .hasExtension(url.getProtocol())) {
             url = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
@@ -693,10 +670,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // 该服务是否是动态，对应zookeeper上表示是否是临时节点，对应dubbo中的功能就是静态服务
                         url = url.addParameterIfAbsent(DYNAMIC_KEY, registryURL.getParameter(DYNAMIC_KEY));
 
-                        // 基于注册中心地址的到监控中心地址，为什么是基于注册中心地址？
+                        // 拿到监控中心地址
                         URL monitorUrl = loadMonitor(registryURL);
 
-                        // 把监控中心地址添加到服务url中
+                        // 当前服务连接哪个监控中心
                         if (monitorUrl != null) {
                             url = url.addParameterAndEncoded(MONITOR_KEY, monitorUrl.toFullString());
                         }
@@ -723,6 +700,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // 这个Invoker中包括了服务的实现者、服务接口类、服务的注册地址（针对当前服务的，参数export指定了当前服务）
                         // 此invoker表示一个可执行的服务，调用invoker的invoke()方法即可执行服务,同时此invoker也可用来导出
                         Invoker<?> invoker = PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(EXPORT_KEY, url.toFullString()));
+                        // invoker.invoke(Invocation)
 
                         // DelegateProviderMetaDataInvoker也表示服务提供者，包括了Invoker和服务的配置
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
@@ -730,6 +708,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // 使用特定的协议来对服务进行导出，这里的协议为RegistryProtocol，导出成功后得到一个Exporter
                         // 1. 先使用RegistryProtocol进行服务注册
                         // 2. 注册完了之后，使用DubboProtocol进行导出
+                        // 到此为止做了哪些事情？ ServiceBean.export()-->刷新ServiceBean的参数-->得到注册中心URL和协议URL-->遍历每个协议URL-->组成服务URL-->生成可执行服务Invoker-->导出服务
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
@@ -839,7 +818,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                                 continue;
                             }
                             try (Socket socket = new Socket()) {
-                                // 通过一个socket去连注册中心，为什么要这么做？
+                                // 通过一个socket去连注册中心，为什么要这么做？连了才能拿到本机ip
                                 SocketAddress addr = new InetSocketAddress(registryURL.getHost(), registryURL.getPort());
                                 socket.connect(addr, 1000);
                                 hostToBind = socket.getLocalAddress().getHostAddress();
@@ -1016,7 +995,6 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     private void convertProtocolIdsToProtocols() {
-        //
 
         if (StringUtils.isEmpty(protocolIds) && CollectionUtils.isEmpty(protocols)) {
             List<String> configedProtocols = new ArrayList<>();

@@ -18,17 +18,11 @@
  */
 package org.apache.dubbo.demo.provider;
 
-import org.apache.dubbo.config.RegistryConfig;
-import org.apache.dubbo.config.spring.context.annotation.DubboComponentScan;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
-
-import org.apache.dubbo.config.spring.context.annotation.EnableDubboConfig;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Application {
     public static void main(String[] args) throws Exception {
@@ -40,7 +34,7 @@ public class Application {
 
     @Configuration
     @EnableDubbo(scanBasePackages = "org.apache.dubbo.demo.provider")
-    @PropertySource("classpath:/spring/dubbo-provider.properties")
+    @PropertySource("classpath:/spring/dubbo-provider.properties")   // Enviroment
     static class ProviderConfiguration {
 
     }
