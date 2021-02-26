@@ -314,7 +314,7 @@ public class DubboProtocol extends AbstractProtocol {
         }
 
         // 开启NettyServer
-        openServer(url);
+        openServer(url);  //请求--->invocation--->服务key--->exporterMap.get(key)--->exporter--->invoker--->invoker.invoke(invocation)-->执行服务
 
         // 特殊的一些序列化机制，比如kryo提供了注册机制来注册类，提高序列化和反序列化的速度
         optimizeSerialization(url);
@@ -448,7 +448,7 @@ public class DubboProtocol extends AbstractProtocol {
         boolean useShareConnect = false;
 
         // connections表示对当前服务提供者建立connections个socket连接
-        // 消费者应用引用了两个服务A和B，这两个服务都部署在了应用C上，如果CONNECTIONS_KEY为2，那么消费者应用会与应用C建立4个Socket连接
+        // 消费者应用引用了两个服务A和B，这两个服务都部署在了应用C上，如果connections为2，那么消费者应用会与应用C建立4个Socket连接
         int connections = url.getParameter(CONNECTIONS_KEY, 0);
 
         List<ReferenceCountExchangeClient> shareClients = null;
