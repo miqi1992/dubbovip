@@ -67,7 +67,7 @@ public class ProtocolListenerWrapper implements Protocol {
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
-        if (REGISTRY_PROTOCOL.equals(url.getProtocol())) {
+        if (REGISTRY_PROTOCOL.equals(url.getProtocol())) {  // dubbo://
             return protocol.refer(type, url);
         }
         return new ListenerInvokerWrapper<T>(protocol.refer(type, url),

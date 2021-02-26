@@ -465,6 +465,7 @@ public class RegistryProtocol implements Protocol {
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
 
         // group="a,b" or group="*"
+        // https://dubbo.apache.org/zh/docs/v2.7/user/examples/group-merger/
         String group = qs.get(GROUP_KEY);
         if (group != null && group.length() > 0) {
             if ((COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {

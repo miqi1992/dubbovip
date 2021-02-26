@@ -105,6 +105,7 @@ public class NettyServer extends AbstractServer implements Server {
                     protected void initChannel(NioSocketChannel ch) throws Exception {
                         // FIXME: should we use getTimeout()?
                         int idleTimeout = UrlUtils.getIdleTimeout(getUrl());
+                        // 这里就会拿到DubboCodec，接收到数据之后就会进行解码
                         NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyServer.this);
                         ch.pipeline()//.addLast("logging",new LoggingHandler(LogLevel.INFO))//for debug
                                 .addLast("decoder", adapter.getDecoder())

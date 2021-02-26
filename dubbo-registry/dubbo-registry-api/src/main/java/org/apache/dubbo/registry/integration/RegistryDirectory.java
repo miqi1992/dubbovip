@@ -254,7 +254,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * @param invokerUrls this parameter can't be null
      */
     // TODO: 2017/8/31 FIXME The thread pool should be used to refresh the address, otherwise the task may be accumulated.
-    private void refreshInvoker(List<URL> invokerUrls) {
+    private void refreshInvoker(List<URL> invokerUrls) {   //http://  dubbo://
         Assert.notNull(invokerUrls, "invokerUrls should not be null");
 
         if (invokerUrls.size() == 1 && invokerUrls.get(0) != null && EMPTY_PROTOCOL.equals(invokerUrls.get(0).getProtocol())) {
@@ -431,7 +431,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                         enabled = url.getParameter(ENABLED_KEY, true);
                     }
                     if (enabled) {
-                        // 调用Protocol的refer方法得到一个Invoker
+                        // 调用Protocol的refer方法得到一个Invoker   DubboProtocol.refer()
                         invoker = new InvokerDelegate<>(protocol.refer(serviceType, url), url, providerUrl);
                     }
                 } catch (Throwable t) {

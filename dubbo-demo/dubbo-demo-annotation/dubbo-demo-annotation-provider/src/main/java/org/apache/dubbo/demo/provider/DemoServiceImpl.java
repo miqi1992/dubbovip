@@ -22,11 +22,12 @@ import org.apache.dubbo.config.annotation.Method;
 import org.apache.dubbo.config.annotation.Service;
 import org.apache.dubbo.demo.DemoService;
 import org.apache.dubbo.rpc.RpcContext;
+import org.apache.dubbo.rpc.RpcException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 //@Service(methods = {@Method(name = "say", timeout = 3000)})
-@Service(version = "1.0.1", group = "tulings",  token = "true", methods = {@Method(name = "sayHello", timeout = 3000)})
+@Service(version = "1.0.1", group = "tulings")
 public class DemoServiceImpl implements DemoService {
     private static final Logger logger = LoggerFactory.getLogger(DemoServiceImpl.class);
 
@@ -34,6 +35,8 @@ public class DemoServiceImpl implements DemoService {
     public String sayHello(String name) {
         logger.info("Hello " + name + ", request from consumer: " + RpcContext.getContext().getRemoteAddress());
 
+//        throw new RpcException();
+//        throw new UserException();
         return "Hello " + name + ", response from provider: " + RpcContext.getContext().getLocalAddress();
     }
 

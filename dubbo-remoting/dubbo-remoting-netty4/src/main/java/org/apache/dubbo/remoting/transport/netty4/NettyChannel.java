@@ -132,9 +132,12 @@ final class NettyChannel extends AbstractChannel {
         int timeout = 0;
         try {
             ChannelFuture future = channel.writeAndFlush(message);
+//            sent="true" 等待消息发出，消息发送失败将抛出异常。
+//            sent="false" 不等待消息发出，将消息放入 IO 队列，即刻返回。
             if (sent) {
                 // wait timeout ms
                 timeout = getUrl().getPositiveParameter(TIMEOUT_KEY, DEFAULT_TIMEOUT);
+                // await会阻塞得到结果，这就是消费者端的timeout
                 success = future.await(timeout);
             }
             Throwable cause = future.cause();

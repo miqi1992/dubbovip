@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @Component("demoServiceComponent")
 public class DemoServiceComponent implements DemoService {
 
-    @Reference
+    @Reference(version = "1.0.1", group = "tulings", mock = "fail: return 123")
     private DemoService demoService;
 
     @Override

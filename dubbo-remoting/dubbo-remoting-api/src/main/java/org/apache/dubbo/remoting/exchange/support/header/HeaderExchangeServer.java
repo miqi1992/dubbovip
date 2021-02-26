@@ -259,7 +259,7 @@ public class HeaderExchangeServer implements ExchangeServer {
     }
 
     private void startIdleCheckTask(URL url) {
-        if (!server.canHandleIdle()) {
+        if (!server.canHandleIdle()) { // 底层NettyServer自己有心跳机制，那么上层的ExchangeServer就不用开启心跳任务了
             AbstractTimerTask.ChannelProvider cp = () -> unmodifiableCollection(HeaderExchangeServer.this.getChannels());
 
             int idleTimeout = getIdleTimeout(url);
